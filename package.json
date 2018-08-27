@@ -1,0 +1,28 @@
+{
+  "name": "ws-counter",
+  "version": "1.0.0",
+  "description": "Websocket Counter Button",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linkinmedo/ws-counter.git"
+  },
+  "keywords": [
+    "ws",
+    "websocket",
+    "node",
+    "js",
+    "javascript",
+    "counter",
+    "button"
+  ],
+  "author": "Mohammed Shammout",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/linkinmedo/ws-counter/issues"
+  },
+  "homepage": "https://github.com/linkinmedo/ws-counter#readme"
+}
