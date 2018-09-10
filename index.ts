@@ -10,6 +10,13 @@ mongoose.connect(`mongodb://${ Config.db.host }:${ Config.db.port }/${ Config.db
 let db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 
+// Typescript Interface
+interface Message {
+    user: string;
+    country: string;
+    add: boolean;
+}
+
 // Mongoose Schema
 let clickSchema = new mongoose.Schema({
   user: String,
@@ -17,8 +24,14 @@ let clickSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
+let countrySchema = new mongoose.Schema({
+  name: String,
+  clicks: Number
+});
+
 // Mongoose Model
 let Click = mongoose.model('Click', clickSchema);
+let Country = mongoose.model('Country', countrySchema);
 
 const app = express();
 
@@ -28,47 +41,55 @@ const server = http.createServer(app);
 //initialize the WebSocket server instance
 const wss = new WebSocket.Server({ server });
 
+const sendData = (msg: Message) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  Promise.all<any> ([Click.count({}),
+                    Click.count({user: msg.user}),
+                    Click.count({ date: {$gt: today} }),
+                    Country.find({}).sort({clicks: -1}).limit(5)]).then( function(values: Array<Number | Array <Object>>) {
+    wss.clients
+        .forEach(client => {
+          client.send(JSON.stringify({ count: values[0], countUser: values[1], countToday: values[2], topCountries: values[3] }));
+        });
+  })
+}
+
 wss.on('connection', (ws: WebSocket) => {
 
-    Click.count({}, ( err, count) => {
-      console.log( "Number of users:", count );
-      wss.clients
-          .forEach(client => {
-            ws.send(`${count}`)
-          });
-    });
+    // var clicks: Number, userClicks: Number, todayClicks: Number;
+
     //connection is up, let's add a simple simple event
     ws.on('message', (message: string) => {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         //log the received message and send it back to the client
         console.log('received: %s', message);
-        let newClick = new Click({ country: "Jordan", user: "linkinmedo" });
-        newClick.save((err, newClick) => {
-          if (err) return console.error(err);
-          Click.count({}, ( err, count) => {
-            console.log( "Number of users:", count );
-            wss.clients
-                .forEach(client => {
-                  client.send(`${count}`);
+        var msg = JSON.parse(message);
+        if (msg.add) {
+          let newClick = new Click({ country: msg.country, user: msg.user });
+          newClick.save((err, newClick) => {
+            if (err) return console.error(err);
+            Country.find({ name: msg.country }, (err, country) => {
+              if (err) return console.error(err);
+              if (country.length === 0) {
+                let newCountry = new Country({ name: msg.country, clicks: 1 });
+                newCountry.save((err, newCountry) => {
+                  if (err) return console.error(err);
+                  sendData(msg);
+                })
+              } else {
+                Country.updateOne({ name: msg.country }, { $inc: {clicks:1} }, (err, country) => {
+                  if (err) return console.error(err);
+                  sendData(msg);
                 });
-          });
-        } );
-
-        // const broadcastRegex = /^broadcast\:/;
-        //
-        // if (broadcastRegex.test(message)) {
-        //     message = message.replace(broadcastRegex, '');
-        //
-        //     //send back the message to the other clients
-        //     wss.clients
-        //         .forEach(client => {
-        //             if (client != ws) {
-        //                 client.send(`Hello, broadcast message -> ${message}`);
-        //             }
-        //         });
-        // } else {
-        //     ws.send(`Hello, you sent -> ${message}`);
-        // }
+              }
+            })
+          } );
+        } else {
+          sendData(msg);
+        }
     });
 });
 
