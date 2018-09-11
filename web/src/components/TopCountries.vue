@@ -3,8 +3,8 @@
     <h2>Top 5 Countries:</h2>
     <ol>
       <li v-for="country in topCountries" :key="country.name">
-        <h4>{{ country.name }}</h4>
-        <h4 class="count">{{ country.clicks }}</h4>
+        <p>{{ country.name }}</p>
+        <p class="count">{{ country.clicks }}</p>
       </li>
     </ol>
   </div>
@@ -15,6 +15,32 @@ export default {
   name: "TopCountries",
   props: {
     topCountries: Array
+  },
+  data() {
+    return {
+      countries: [
+        {
+          name: "Jordan",
+          clicks: 100
+        },
+        {
+          name: "USA",
+          clicks: 99
+        },
+        {
+          name: "KSA",
+          clicks: 75
+        },
+        {
+          name: "Tunis",
+          clicks: 50
+        },
+        {
+          name: "Russia",
+          clicks: 45
+        }
+      ]
+    };
   }
 };
 </script>
@@ -26,8 +52,8 @@ export default {
   flex: 1;
   flex-direction: column;
   align-items: center;
-  border: 1px solid grey;
-  border-radius: 20px;
+  border: 1px solid lightgrey;
+  // border-radius: 20px;
   margin-left: 10px;
 }
 ol {
@@ -37,8 +63,13 @@ ol {
 li {
   display: flex;
   justify-content: space-around;
+  border-bottom: 1px solid lightgrey;
+  margin: 0 10px;
+  &:last-child {
+    border-bottom: none;
+  }
 }
 .count {
-  color: red;
+  color: #42b983;
 }
 </style>

@@ -22,11 +22,12 @@ export default {
   flex: 1;
   flex-direction: column;
   align-items: center;
-  border: 1px solid grey;
-  border-radius: 20px;
+  justify-content: center;
+  border: 1px solid lightgrey;
+  // border-radius: 20px;
   margin-right: 10px;
 }
 .count {
-  color: red;
+  color: #42b983;
 }
 </style>

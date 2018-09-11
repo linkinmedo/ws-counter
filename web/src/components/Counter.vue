@@ -38,7 +38,7 @@ export default {
   align-items: center;
 }
 span {
-  color: red;
+  color: #42b983;
 }
 button {
   border-radius: 10px;
@@ -53,8 +53,11 @@ button {
   font-weight: bold;
   font-size: 16px;
   border: none;
-  box-shadow: 5px 5px 20px #999;
+  box-shadow: 2px 2px 20px #999;
   transition: box-shadow 100ms;
+  &:hover {
+    box-shadow: 5px 5px 20px #999;
+  }
   &:active {
     box-shadow: 2px 2px 20px #999;
   }
@@ -65,16 +68,5 @@ h3 {
 h1,
 h2 {
   transition: width 500ms;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
 }
 </style>
