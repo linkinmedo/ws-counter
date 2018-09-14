@@ -29,6 +29,7 @@ export default {
       countToday: 0,
       topCountries: [],
       country: "",
+      flag: "",
       user: ""
     };
   },
@@ -38,37 +39,47 @@ export default {
     TopCountries
   },
   beforeMount() {
-    request("http://ip-api.com/json", (error, response, body) => {
-      this.country = JSON.parse(body).country;
-      if (!this.$cookies.isKey("ws-counter"))
-        this.$cookies.set("ws-counter", nanoid(), Infinity);
-      this.user = this.$cookies.get("ws-counter");
-      this.socket = new WebSocket(`ws://${process.env.VUE_APP_WS_HOST}:8999`);
-      this.socket.addEventListener("open", () => {
-        this.socket.send(
-          JSON.stringify({
-            user: this.user,
-            country: this.country,
-            add: false
-          })
-        );
-      });
-      this.socket.addEventListener("message", event => {
-        this.loading = false;
-        this.countSession++;
-        var data = JSON.parse(event.data);
-        console.log(data);
-        this.count = data.count;
-        this.countUser = data.countUser;
-        this.countToday = data.countToday;
-        this.topCountries = data.topCountries;
-      });
-    });
+    request(
+      `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.VUE_APP_IP_KEY}`,
+      (error, response, body) => {
+        console.log(body);
+        this.country = JSON.parse(body).country_name;
+        this.flag = JSON.parse(body).country_flag;
+        if (!this.$cookies.isKey("ws-counter"))
+          this.$cookies.set("ws-counter", nanoid(), Infinity);
+        this.user = this.$cookies.get("ws-counter");
+        this.socket = new WebSocket(`ws://${process.env.VUE_APP_WS_HOST}:8999`);
+        this.socket.addEventListener("open", () => {
+          this.socket.send(
+            JSON.stringify({
+              user: this.user,
+              country: this.country,
+              add: false
+            })
+          );
+        });
+        this.socket.addEventListener("message", event => {
+          this.loading = false;
+          this.countSession++;
+          var data = JSON.parse(event.data);
+          console.log(data);
+          this.count = data.count;
+          this.countUser = data.countUser;
+          this.countToday = data.countToday;
+          this.topCountries = data.topCountries;
+        });
+      }
+    );
   },
   methods: {
     add() {
       this.socket.send(
-        JSON.stringify({ user: this.user, country: this.country, add: true })
+        JSON.stringify({
+          user: this.user,
+          country: this.country,
+          flag: this.flag,
+          add: true
+        })
       );
     }
   }

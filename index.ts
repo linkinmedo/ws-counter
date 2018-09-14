@@ -26,6 +26,7 @@ let clickSchema = new mongoose.Schema({
 
 let countrySchema = new mongoose.Schema({
   name: String,
+  flag: String,
   clicks: Number
 });
 
@@ -74,7 +75,7 @@ wss.on('connection', (ws: WebSocket) => {
             Country.find({ name: msg.country }, (err, country) => {
               if (err) return console.error(err);
               if (country.length === 0) {
-                let newCountry = new Country({ name: msg.country, clicks: 1 });
+                let newCountry = new Country({ name: msg.country, clicks: 1, flag: msg.flag });
                 newCountry.save((err, newCountry) => {
                   if (err) return console.error(err);
                   sendData(msg);
