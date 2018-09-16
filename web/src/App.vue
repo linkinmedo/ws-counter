@@ -60,11 +60,13 @@ export default {
         });
         this.socket.addEventListener("message", event => {
           this.loading = false;
-          this.countSession++;
           var data = JSON.parse(event.data);
           console.log(data);
           this.count = data.count;
-          if (this.countUser) this.countUser = data.countUser;
+          if (data.countUser) {
+            this.countSession++;
+            this.countUser = data.countUser;
+          }
           this.countToday = data.countToday;
           this.topCountries = data.topCountries;
         });
