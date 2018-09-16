@@ -1,10 +1,12 @@
+import fs from 'fs';
 import express from 'express';
 import mongoose from 'mongoose';
-import http from 'http';
+import https from 'https';
 import WebSocket from 'ws';
 import Config from './config';
 
 console.log(Config);
+console.info(process.env.NODE_ENV);
 
 mongoose.connect(`mongodb://${ Config.db.host }:${ Config.db.port }/${ Config.db.db_name }`, { useNewUrlParser: true });
 let db = mongoose.connection;
@@ -34,10 +36,21 @@ let countrySchema = new mongoose.Schema({
 let Click = mongoose.model('Click', clickSchema);
 let Country = mongoose.model('Country', countrySchema);
 
+// SSL Cert
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/cert.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/fullchain.pem', 'utf8');
+
+const credentials = {
+    key: privateKey,
+    cert: certificate,
+    ca: ca
+};
+
 const app = express();
 
 //initialize a simple http server
-const server = http.createServer(app);
+const server = https.createServer(credentials, app);
 
 //initialize the WebSocket server instance
 const wss = new WebSocket.Server({ server });
