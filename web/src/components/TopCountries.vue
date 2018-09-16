@@ -3,7 +3,10 @@
     <h2>Top 5 Countries:</h2>
     <ol>
       <li v-for="country in topCountries" :key="country.name">
-        <p>{{ country.name }}</p>
+        <div class="country">
+          <img :src="country.flag" :alt="country.name" />
+          <p>{{ country.name }}</p>
+        </div>
         <p class="count">{{ country.clicks }}</p>
       </li>
     </ol>
@@ -63,11 +66,20 @@ ol {
 li {
   display: flex;
   justify-content: space-around;
+  align-items: center;
   border-bottom: 1px solid lightgrey;
   margin: 0 10px;
   &:last-child {
     border-bottom: none;
   }
+  .country {
+    display: flex;
+    align-items: center;
+  }
+}
+img {
+  height: 14px;
+  margin-right: 10px;
 }
 .count {
   color: #42b983;
