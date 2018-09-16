@@ -62,16 +62,18 @@ if ( process.env.NODE_ENV === "production" ) {
 //initialize the WebSocket server instance
 const wss = new WebSocket.Server({ server });
 
-const sendData = (msg: Message) => {
+const sendData = (msg: Message, ws :WebSocket) => {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   Promise.all<any> ([Click.count({}),
                     Click.count({user: msg.user}),
                     Click.count({ date: {$gt: today} }),
                     Country.find({}).sort({clicks: -1}).limit(5)]).then( function(values: Array<Number | Array <Object>>) {
+    ws.send(JSON.stringify({ count: values[0], countUser: values[1], countToday: values[2], topCountries: values[3] }));
     wss.clients
         .forEach(client => {
-          client.send(JSON.stringify({ count: values[0], countUser: values[1], countToday: values[2], topCountries: values[3] }));
+          if (client !== ws)
+            client.send(JSON.stringify({ count: values[0], countToday: values[2], topCountries: values[3] }));
         });
   })
 }
@@ -98,18 +100,18 @@ wss.on('connection', (ws: WebSocket) => {
                 let newCountry = new Country({ name: msg.country, clicks: 1, flag: msg.flag });
                 newCountry.save((err, newCountry) => {
                   if (err) return console.error(err);
-                  sendData(msg);
+                  sendData(msg, ws);
                 })
               } else {
                 Country.updateOne({ name: msg.country }, { $inc: {clicks:1} }, (err, country) => {
                   if (err) return console.error(err);
-                  sendData(msg);
+                  sendData(msg, ws);
                 });
               }
             })
           } );
         } else {
-          sendData(msg);
+          sendData(msg, ws);
         }
     });
 });

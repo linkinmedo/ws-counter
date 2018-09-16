@@ -64,7 +64,7 @@ export default {
           var data = JSON.parse(event.data);
           console.log(data);
           this.count = data.count;
-          this.countUser = data.countUser;
+          if (this.countUser) this.countUser = data.countUser;
           this.countToday = data.countToday;
           this.topCountries = data.topCountries;
         });
