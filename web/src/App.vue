@@ -48,7 +48,7 @@ export default {
         if (!this.$cookies.isKey("ws-counter"))
           this.$cookies.set("ws-counter", nanoid(), Infinity);
         this.user = this.$cookies.get("ws-counter");
-        this.socket = new WebSocket(`wss://${process.env.VUE_APP_WS_HOST}:8999`);
+        this.socket = new WebSocket(`${ process.env.NODE_ENV === "production" ? "wss" : "ws"}://${process.env.VUE_APP_WS_HOST}:8999`);
         this.socket.addEventListener("open", () => {
           this.socket.send(
             JSON.stringify({

@@ -2,6 +2,7 @@ import fs from 'fs';
 import express from 'express';
 import mongoose from 'mongoose';
 import https from 'https';
+import http from 'http';
 import WebSocket from 'ws';
 import Config from './config';
 
@@ -36,21 +37,27 @@ let countrySchema = new mongoose.Schema({
 let Click = mongoose.model('Click', clickSchema);
 let Country = mongoose.model('Country', countrySchema);
 
-// SSL Cert
-const privateKey = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/privkey.pem', 'utf8');
-const certificate = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/cert.pem', 'utf8');
-const ca = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/fullchain.pem', 'utf8');
-
-const credentials = {
-    key: privateKey,
-    cert: certificate,
-    ca: ca
-};
-
 const app = express();
+let server :any;
 
-//initialize a simple http server
-const server = https.createServer(credentials, app);
+// SSL Cert
+if ( process.env.NODE_ENV === "production" ) {
+  const privateKey = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/privkey.pem', 'utf8');
+  const certificate = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/cert.pem', 'utf8');
+  const ca = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/fullchain.pem', 'utf8');
+
+  const credentials = {
+      key: privateKey,
+      cert: certificate,
+      ca: ca
+  };
+
+  //initialize a simple https server
+  server = https.createServer(credentials, app);
+} else {
+  //initialize a simple http server
+  server = http.createServer(app);
+}
 
 //initialize the WebSocket server instance
 const wss = new WebSocket.Server({ server });
