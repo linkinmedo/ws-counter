@@ -6,9 +6,6 @@ import http from 'http';
 import WebSocket from 'ws';
 import Config from './config';
 
-console.log(Config);
-console.info(process.env.NODE_ENV);
-
 mongoose.connect(`mongodb://${ Config.db.host }:${ Config.db.port }/${ Config.db.db_name }`, { useNewUrlParser: true });
 let db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -88,7 +85,7 @@ wss.on('connection', (ws: WebSocket) => {
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         //log the received message and send it back to the client
-        console.log('received: %s', message);
+        // console.log('received: %s', message);
         var msg = JSON.parse(message);
         if (msg.add) {
           let newClick = new Click({ country: msg.country, user: msg.user });

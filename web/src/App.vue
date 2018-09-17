@@ -42,7 +42,6 @@ export default {
     request(
       `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.VUE_APP_IP_KEY}`,
       (error, response, body) => {
-        console.log(body);
         this.country = JSON.parse(body).country_name;
         this.flag = JSON.parse(body).country_flag;
         if (!this.$cookies.isKey("ws-counter"))
@@ -65,7 +64,6 @@ export default {
         this.socket.addEventListener("message", event => {
           this.loading = false;
           var data = JSON.parse(event.data);
-          console.log(data);
           this.count = data.count;
           if (data.countUser) {
             this.countSession++;
