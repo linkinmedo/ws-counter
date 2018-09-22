@@ -1,5 +1,8 @@
 <template>
   <div class="counter">
+    <div v-if="connection === 'lost'" class="lost">
+      <p>Connection to the server lost, click the button to reconnect.</p>
+    </div>
     <div class="row">
       <h1>This </h1>
       <button v-on:click="add">button</button>
@@ -21,7 +24,8 @@ export default {
     count: Number,
     countSession: Number,
     countUser: Number,
-    add: Function
+    add: Function,
+    connection: String
   }
 };
 </script>
@@ -40,9 +44,16 @@ export default {
 span {
   color: #42b983;
 }
+h3 {
+  margin: 40px 0 0;
+}
+h1,
+h2 {
+  transition: width 500ms;
+}
 button {
   border-radius: 10px;
-  width: 100px;
+  padding: 0 20px;
   height: 50px;
   text-transform: uppercase;
   margin: 0 10px;
@@ -62,11 +73,16 @@ button {
     box-shadow: 2px 2px 20px #999;
   }
 }
-h3 {
-  margin: 40px 0 0;
-}
-h1,
-h2 {
-  transition: width 500ms;
+.lost {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 0, 0, 0.6);
+  padding: 0 10px;
+  border-radius: 10px;
+  box-shadow: 2px 2px 20px #999;
+  p {
+    color: white;
+  }
 }
 </style>
