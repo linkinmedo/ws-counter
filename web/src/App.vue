@@ -85,7 +85,7 @@ export default {
         this.connection = "connected";
         var data = JSON.parse(event.data);
         this.count = data.count;
-        if (data.countUser) {
+        if (data.countUser != undefined) {
           this.countSession++;
           this.countUser = data.countUser;
         }
