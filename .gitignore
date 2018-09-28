@@ -74,3 +74,6 @@ typings/
 
 # Serverless directories
 .serverless
+
+# Ignore .DS_Store
+.DS_Store
