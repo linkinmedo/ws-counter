@@ -72,7 +72,9 @@ const sendData = (msg: Message, ws :WebSocket) => {
           if (client !== ws)
             client.send(JSON.stringify({ count: values[0], countToday: values[2], topCountries: values[3] }));
         });
-  })
+                    }).catch( function(error: Error) {
+                      console.log(error);
+                    } )
 }
 
 wss.on('connection', (ws: WebSocket) => {
