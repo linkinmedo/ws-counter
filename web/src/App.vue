@@ -17,6 +17,7 @@ import Today from "./components/Today.vue";
 import TopCountries from "./components/TopCountries.vue";
 import request from "request";
 import nanoid from "nanoid";
+import _ from "lodash";
 
 export default {
   name: "app",
@@ -52,7 +53,7 @@ export default {
     );
   },
   methods: {
-    add() {
+    add: _.debounce(function() {
       if (this.connection != "connected") {
         this.connect(true);
       } else {
@@ -65,7 +66,7 @@ export default {
           })
         );
       }
-    },
+    }),
     connect(add) {
       this.socket = new WebSocket(
         `${process.env.NODE_ENV === "production" ? "wss" : "ws"}://${
