@@ -31,9 +31,14 @@ let countrySchema = new mongoose.Schema({
   clicks: Number
 });
 
+let blockedSchema = new mongoose.Schema({
+  user: String,
+});
+
 // Mongoose Model
 let Click = mongoose.model('Click', clickSchema);
 let Country = mongoose.model('Country', countrySchema);
+let Blocked = mongoose.model('Blocked', blockedSchema);
 
 // Rate limiter
 let limiter = rateLimit('1s', 20);
@@ -81,7 +86,8 @@ const sendData = (msg: Message, ws :WebSocket) => {
                     } )
 }
 
-wss.on('connection', (ws: WebSocket) => {
+wss.on('connection', (ws: any) => {
+    ws.fouls = 0;
     limiter(ws);
 
     // var clicks: Number, userClicks: Number, todayClicks: Number;
@@ -94,32 +100,44 @@ wss.on('connection', (ws: WebSocket) => {
         //log the received message and send it back to the client
         // console.log('received: %s', message);
         var msg = JSON.parse(message);
-        if (msg.add) {
-          let newClick = new Click({ country: msg.country, user: msg.user });
-          newClick.save((err, newClick) => {
-            if (err) return console.error(err);
-            Country.find({ name: msg.country }, (err, country) => {
+        Blocked.findOne({ user: msg.user }, (err, blocked) => {
+          if (err) return console.error(err);
+          if (blocked !== null) ws.terminate();
+          if (msg.add) {
+            let newClick = new Click({ country: msg.country, user: msg.user });
+            newClick.save((err, newClick) => {
               if (err) return console.error(err);
-              if (country.length === 0) {
-                let newCountry = new Country({ name: msg.country, clicks: 1, flag: msg.flag });
-                newCountry.save((err, newCountry) => {
-                  if (err) return console.error(err);
-                  sendData(msg, ws);
-                })
-              } else {
-                Country.updateOne({ name: msg.country }, { $inc: {clicks:1} }, (err, country) => {
-                  if (err) return console.error(err);
-                  sendData(msg, ws);
-                });
-              }
-            })
-          } );
-        } else {
-          sendData(msg, ws);
-        }
+              Country.find({ name: msg.country }, (err, country) => {
+                if (err) return console.error(err);
+                if (country.length === 0) {
+                  let newCountry = new Country({ name: msg.country, clicks: 1, flag: msg.flag });
+                  newCountry.save((err, newCountry) => {
+                    if (err) return console.error(err);
+                    sendData(msg, ws);
+                  })
+                } else {
+                  Country.updateOne({ name: msg.country }, { $inc: {clicks:1} }, (err, country) => {
+                    if (err) return console.error(err);
+                    sendData(msg, ws);
+                  });
+                }
+              })
+            } );
+          } else {
+            sendData(msg, ws);
+          }
+        })
     });
-    ws.on('limited', (data) => {
-      ws.terminate();
+    ws.on('limited', (data: any) => {
+      ws.fouls++;
+      let d = JSON.parse(data);
+      if (ws.fouls >= 5) {
+        let newBlocked = new Blocked({ user: d.user })
+        newBlocked.save((err, newBlocked) => {
+          if (err) return console.error(err);
+          ws.terminate();
+        })
+      }
     })
 });
 
