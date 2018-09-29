@@ -29,7 +29,8 @@
   "dependencies": {
     "express": "^4.16.3",
     "mongoose": "^5.2.10",
-    "ws": "^6.0.0"
+    "ws": "^6.0.0",
+    "ws-rate-limit": "0.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.16.0",

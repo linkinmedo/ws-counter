@@ -5,6 +5,7 @@ import https from 'https';
 import http from 'http';
 import WebSocket from 'ws';
 import Config from './config';
+var rateLimit = require('ws-rate-limit');
 
 mongoose.connect(`mongodb://${ Config.db.host }:${ Config.db.port }/${ Config.db.db_name }`, { useNewUrlParser: true });
 let db = mongoose.connection;
@@ -33,6 +34,9 @@ let countrySchema = new mongoose.Schema({
 // Mongoose Model
 let Click = mongoose.model('Click', clickSchema);
 let Country = mongoose.model('Country', countrySchema);
+
+// Rate limiter
+let limiter = rateLimit('1s', 20);
 
 const app = express();
 let server :any;
@@ -78,6 +82,7 @@ const sendData = (msg: Message, ws :WebSocket) => {
 }
 
 wss.on('connection', (ws: WebSocket) => {
+    limiter(ws);
 
     // var clicks: Number, userClicks: Number, todayClicks: Number;
 
@@ -113,6 +118,9 @@ wss.on('connection', (ws: WebSocket) => {
           sendData(msg, ws);
         }
     });
+    ws.on('limited', (data) => {
+      ws.terminate();
+    })
 });
 
 //start our server
