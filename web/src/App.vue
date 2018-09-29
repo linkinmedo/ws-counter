@@ -53,7 +53,7 @@ export default {
     );
   },
   methods: {
-    add: _.debounce(function() {
+    add: _.throttle(function() {
       if (this.connection != "connected") {
         this.connect(true);
       } else {
@@ -66,7 +66,7 @@ export default {
           })
         );
       }
-    }),
+    }, 100),
     connect(add) {
       this.socket = new WebSocket(
         `${process.env.NODE_ENV === "production" ? "wss" : "ws"}://${
