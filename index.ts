@@ -79,23 +79,15 @@ const sendData = (msg: Message, ws :WebSocket) => {
 
 wss.on('connection', (ws: WebSocket) => {
 
-    var x = 0;
     // var clicks: Number, userClicks: Number, todayClicks: Number;
-    (function(){
-      // do some stuff
-      setTimeout(() => x = 0, 1000);
-    })();
 
     //connection is up, let's add a simple simple event
     ws.on('message', (message: string) => {
-        x++;
-        console.log(x);
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         //log the received message and send it back to the client
         // console.log('received: %s', message);
-        // if (x > 30) ws.terminate();
         var msg = JSON.parse(message);
         if (msg.add) {
           let newClick = new Click({ country: msg.country, user: msg.user });
