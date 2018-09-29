@@ -73,7 +73,7 @@ const sendData = (msg: Message, ws :WebSocket) => {
             client.send(JSON.stringify({ count: values[0], countToday: values[2], topCountries: values[3] }));
         });
                     }).catch( function(error: Error) {
-                      console.log(error);
+                      ws.terminate();
                     } )
 }
 
@@ -95,7 +95,7 @@ wss.on('connection', (ws: WebSocket) => {
 
         //log the received message and send it back to the client
         // console.log('received: %s', message);
-        if (x > 30) ws.terminate();
+        // if (x > 30) ws.terminate();
         var msg = JSON.parse(message);
         if (msg.add) {
           let newClick = new Click({ country: msg.country, user: msg.user });
