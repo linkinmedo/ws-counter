@@ -86,7 +86,8 @@ const sendData = (msg: Message, ws :WebSocket) => {
                     } )
 }
 
-wss.on('connection', (ws: any) => {
+wss.on('connection', (ws: any, req: any) => {
+    console.info(req.headers.origin);
     ws.fouls = 0;
     limiter(ws);
 
