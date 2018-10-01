@@ -41,7 +41,7 @@ let Country = mongoose.model('Country', countrySchema);
 let Blocked = mongoose.model('Blocked', blockedSchema);
 
 // Rate limiter
-let limiter = rateLimit('1s', 20);
+let limiter = rateLimit('1s', 9);
 
 const app = express();
 let server :any;
@@ -86,8 +86,21 @@ const sendData = (msg: Message, ws :WebSocket) => {
                     } )
 }
 
+const blockUser = (user: String, ws: WebSocket) => {
+        ws.terminate();
+        let newBlocked = new Blocked({ user: user })
+        newBlocked.save((err, newBlocked) => {
+          if (err) return console.error(err);
+        })
+}
+
 wss.on('connection', (ws: any, req: any) => {
-    console.info(req.headers.origin);
+    if(process.env.NODE_ENV === "production") {
+      if(!Config.server.allawed_origins.includes(req.headers.origin)) {
+        ws.terminate();
+      }
+    }
+
     ws.fouls = 0;
     limiter(ws);
 
@@ -133,11 +146,7 @@ wss.on('connection', (ws: any, req: any) => {
       ws.fouls++;
       let d = JSON.parse(data);
       if (ws.fouls >= 5) {
-        let newBlocked = new Blocked({ user: d.user })
-        newBlocked.save((err, newBlocked) => {
-          if (err) return console.error(err);
-          ws.terminate();
-        })
+        blockUser(d.user, ws);
       }
     })
 });
