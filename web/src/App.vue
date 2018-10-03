@@ -41,7 +41,9 @@ export default {
   },
   beforeMount() {
     request(
-      `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.VUE_APP_IP_KEY}`,
+      `https://api.ipgeolocation.io/ipgeo?apiKey=${
+        process.env.VUE_APP_IP_KEY
+      }&fields=country_name,country_flag`,
       (error, response, body) => {
         this.country = JSON.parse(body).country_name;
         this.flag = JSON.parse(body).country_flag;
