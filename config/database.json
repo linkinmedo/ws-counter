@@ -1,6 +1,6 @@
 {
   "host": "localhost",
   "port": 27017,
-  "db_name": "ws_counter"
+  "db_name": "counterdb"
 }
 
