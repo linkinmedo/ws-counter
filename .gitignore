@@ -77,3 +77,6 @@ typings/
 
 # Ignore .DS_Store
 .DS_Store
+
+# Ignore Secrets
+secrets.json
