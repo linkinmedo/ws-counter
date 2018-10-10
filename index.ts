@@ -188,7 +188,7 @@ const startServer = () => {
 
 // update db clicks
 const updateDb = () => {
-  if (today !== new Date().toDateString()) clicksData.todayClicks = 0;
+  // if (today !== new Date().toDateString()) clicksData.todayClicks = 0;
   let newClick = new Click({
     amount: clicksData.clicks,
     new: clicksData.clicks - clicksData.oldClicks,
@@ -215,7 +215,7 @@ const sendData = (ws: Client, wss: any) => {
   ws.send(
     JSON.stringify({
       count: clicksData.clicks,
-      countUser: ws.clicks && ws.clicks,
+      countUser: ws.clicks,
       countToday: clicksData.todayClicks,
       topCountries: clicksData.countries.slice(0, 5)
     })
@@ -311,7 +311,7 @@ const setWebSocket = (wss: any) => {
         ws.send(
           JSON.stringify({
             count: clicksData.clicks,
-            countUser: ws.clicks && ws.clicks,
+            countUser: ws.clicks,
             countToday: clicksData.todayClicks,
             topCountries: clicksData.countries.slice(0, 5),
             connected: true
@@ -326,7 +326,7 @@ const setWebSocket = (wss: any) => {
         ws.send(
           JSON.stringify({
             count: clicksData.clicks,
-            countUser: ws.clicks && ws.clicks,
+            countUser: ws.clicks,
             countToday: clicksData.todayClicks,
             topCountries: clicksData.countries.slice(0, 5),
             connected: true
@@ -351,11 +351,9 @@ const setWebSocket = (wss: any) => {
         if (err) return console.error(err);
         if (!user) ws.terminate();
         if (ws.connected && msg.add) {
-          if (err) return console.error(err);
-          userClicks = user.clicks;
           clicksData.clicks++;
           clicksData.todayClicks++;
-          ws.clicks && ws.clicks++;
+          ws.clicks !== undefined && ws.clicks++;
           clicksData.countries.find((country, index) => {
             if (country.name === ws.country) {
               clicksData.countries[index].clicks++;
