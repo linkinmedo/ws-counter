@@ -1,13 +1,13 @@
 <template>
   <div id="app">
     <div class="container" v-if="connection !== 'loading'">
+      <Animation ref="animation"/>
       <Counter
         :count=count
         :add=add
         :countSession=countSession
         :countUser=countUser
-        :connection=connection
-        :isAnimated=isAnimated />
+        :connection=connection />
       <div class="row">
         <Today :countToday=countToday />
         <TopCountries :topCountries=topCountries />
@@ -18,6 +18,7 @@
 </template>
 
 <script>
+import Animation from "./components/Animation.vue";
 import Counter from "./components/Counter.vue";
 import Today from "./components/Today.vue";
 import TopCountries from "./components/TopCountries.vue";
@@ -34,11 +35,11 @@ export default {
       countUser: 0,
       countToday: 0,
       topCountries: [],
-      user: "",
-      isAnimated: false
+      user: ""
     };
   },
   components: {
+    Animation,
     Counter,
     Today,
     TopCountries,
@@ -51,8 +52,6 @@ export default {
   },
   methods: {
     add: _.throttle(function() {
-      this.isAnimated = true;
-      setTimeout(() => (this.isAnimated = false), 500);
       if (this.connection != "connected") {
         this.connect();
       } else {
@@ -90,6 +89,7 @@ export default {
       }
     },
     updateCount(data) {
+      if (this.$refs.animation) this.$refs.animation.potato();
       this.count = data.count;
       if (data.countUser != undefined) {
         if (!data.connected) {
@@ -107,14 +107,19 @@ export default {
 <style lang="scss">
 body {
   margin: 0;
+  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
+  // background: linear-gradient(#2b5876, #4e4376);
 }
 
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  // font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: "K2D", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
+  color: white;
+  width: 100vw;
+  min-height: 100vh;
   .container {
     width: 100%;
     display: flex;

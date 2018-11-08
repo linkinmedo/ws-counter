@@ -17,6 +17,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+@import "../assets/_variables.scss";
+
 .loading-container {
   height: 100vh;
   width: 100vw;
@@ -34,7 +36,7 @@ export default {
 .la-ball-atom {
   display: block;
   font-size: 0;
-  color: #333;
+  color: white;
 }
 .la-ball-atom > div {
   display: inline-block;
@@ -53,7 +55,8 @@ export default {
   z-index: 1;
   width: 60%;
   height: 60%;
-  background: #42b983;
+  background: $primary;
+  box-shadow: 0px 0px 30px #999;
   border-radius: 100%;
   -webkit-transform: translate(-50%, -50%);
   -moz-transform: translate(-50%, -50%);
