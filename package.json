@@ -29,6 +29,7 @@
   "dependencies": {
     "@types/nanoid": "^1.2.0",
     "axios": "^0.18.0",
+    "cron": "^1.5.0",
     "express": "^4.16.3",
     "mongoose": "^5.2.10",
     "nanoid": "^1.2.6",

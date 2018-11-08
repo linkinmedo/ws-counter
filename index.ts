@@ -7,6 +7,7 @@ import http from "http";
 import axios from "axios";
 import WebSocket from "ws";
 import nanoid from "nanoid";
+import { CronJob } from "cron";
 import Config from "./config";
 import Secrets from "./secrets.json";
 var rateLimit = require("ws-rate-limit");
@@ -119,10 +120,11 @@ Click.findOne()
   .sort({ time: -1 })
   .exec((err, click: Click) => {
     if (err) return console.error(err);
+    console.log(click.time.toDateString());
     clicksData.clicks = click ? click.amount : 0;
     clicksData.oldClicks = click ? click.amount : 0;
     clicksData.todayClicks =
-      clicksData.clicks && today === new Date().toDateString()
+      click && click.time.toDateString() === new Date().toDateString()
         ? click.clicksToday
         : 0;
     Country.find((err: Error, countries: Array<Country>) => {
@@ -138,6 +140,15 @@ Click.findOne()
       setWebSocket(wss);
     });
   });
+
+new CronJob(
+  "0 0 0 * * *",
+  () => {
+    clicksData.todayClicks = 0;
+  },
+  null,
+  true
+);
 
 const startServer = () => {
   let server: any;
