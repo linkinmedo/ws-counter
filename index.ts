@@ -9,6 +9,16 @@ import WebSocket from "ws";
 import nanoid from "nanoid";
 import { CronJob } from "cron";
 import Config from "./config";
+import {
+  Data,
+  Click,
+  User,
+  Message,
+  TodayClick,
+  Country,
+  Client
+} from "./interfaces";
+import { ClickModel, TodayClickModel, CountryModel, UserModel } from "./models";
 import Secrets from "./secrets.json";
 var rateLimit = require("ws-rate-limit");
 
@@ -18,87 +28,6 @@ mongoose.connect(
 );
 let db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
-
-// Typescript Interface
-interface Message {
-  user: string;
-  country: string;
-  add: boolean;
-}
-
-interface Click {
-  amount: number;
-  new: number;
-  clicksToday: number;
-  time: Date;
-}
-
-interface TodayClick {
-  amount: number;
-  time: Date;
-}
-
-interface Country {
-  name: string;
-  flag: string;
-  clicks: number;
-}
-
-interface User {
-  name: string;
-  clicks: number;
-  blocked: boolean;
-}
-
-interface Data {
-  clicks: number;
-  oldClicks: number;
-  todayClicks: number;
-  countries: Array<{
-    name: string;
-    flag: string;
-    clicks: number;
-  }>;
-}
-
-interface Client extends WebSocket {
-  fouls?: number;
-  country?: string;
-  connected?: boolean;
-  clicks?: number;
-  name?: string;
-}
-
-// Mongoose Schema
-let clickSchema = new mongoose.Schema({
-  amount: Number,
-  new: Number,
-  clicksToday: Number,
-  time: { type: Date, default: Date.now }
-});
-
-let todayClickSchema = new mongoose.Schema({
-  amount: Number,
-  time: { type: Date, default: Date.now }
-});
-
-let countrySchema = new mongoose.Schema({
-  name: String,
-  flag: String,
-  clicks: { type: Number, default: 0 }
-});
-
-let userSchema = new mongoose.Schema({
-  name: String,
-  clicks: { type: Number, default: 0 },
-  blocked: { type: Boolean, default: false }
-});
-
-// Mongoose Model
-let Click = mongoose.model("Click", clickSchema);
-let TodayClick = mongoose.model("TodayClick", todayClickSchema);
-let Country = mongoose.model("Country", countrySchema);
-let User = mongoose.model("User", userSchema);
 
 // Rate limiter
 let limiter = rateLimit("1s", 9);
@@ -112,14 +41,12 @@ let clicksData: Data = {
 };
 let wss: any;
 
-// Today date
-let today = new Date().toDateString();
-
 // Get inital click count
-Click.findOne()
+ClickModel.findOne()
   .sort({ time: -1 })
   .exec((err, click: Click) => {
     if (err) return console.error(err);
+    if (!click) return;
     console.log(click.time.toDateString());
     clicksData.clicks = click ? click.amount : 0;
     clicksData.oldClicks = click ? click.amount : 0;
@@ -127,7 +54,7 @@ Click.findOne()
       click && click.time.toDateString() === new Date().toDateString()
         ? click.clicksToday
         : 0;
-    Country.find((err: Error, countries: Array<Country>) => {
+    CountryModel.find((err: Error, countries: Array<Country>) => {
       if (err) return console.error(err);
       countries.forEach(country =>
         clicksData.countries.push({
@@ -199,8 +126,7 @@ const startServer = () => {
 
 // update db clicks
 const updateDb = () => {
-  // if (today !== new Date().toDateString()) clicksData.todayClicks = 0;
-  let newClick = new Click({
+  let newClick = new ClickModel({
     amount: clicksData.clicks,
     new: clicksData.clicks - clicksData.oldClicks,
     clicksToday: clicksData.todayClicks
@@ -209,7 +135,7 @@ const updateDb = () => {
     if (err) return console.error(err);
     clicksData.oldClicks = clicksData.clicks;
     clicksData.countries.forEach(country => {
-      Country.updateOne(
+      CountryModel.updateOne(
         { name: country.name },
         { clicks: country.clicks, name: country.name, flag: country.flag },
         { upsert: true },
@@ -245,7 +171,7 @@ const sendData = (ws: Client, wss: any) => {
 
 const blockUser = (name: String, ws: WebSocket) => {
   ws.terminate();
-  User.updateOne({ name }, { blocked: true }, (err, user) => {
+  UserModel.updateOne({ name }, { blocked: true }, (err, user) => {
     if (err) return console.error(err);
     console.log(`user ${user.name} has been blocked!`);
   });
@@ -253,7 +179,7 @@ const blockUser = (name: String, ws: WebSocket) => {
 
 const createUser = (ws: Client) => {
   const name = nanoid();
-  let newUser = new User({ name });
+  let newUser = new UserModel({ name });
   newUser.save((err, newUser) => {
     if (err) return console.error(err);
   });
@@ -262,7 +188,7 @@ const createUser = (ws: Client) => {
 };
 
 const checkUser = (name: any, ws: Client) => {
-  User.findOne({ name: name }, (err, user: User) => {
+  UserModel.findOne({ name: name }, (err, user: User) => {
     if (err) return console.error(err);
     if (user === undefined || user.blocked) ws.terminate();
     ws.name = name;
@@ -350,7 +276,7 @@ const setWebSocket = (wss: any) => {
     limiter(ws);
 
     ws.on("close", () => {
-      User.updateOne({ name: ws.name }, { clicks: ws.clicks }, err => {
+      UserModel.updateOne({ name: ws.name }, { clicks: ws.clicks }, err => {
         if (err) return console.error(err);
       });
     });
@@ -358,23 +284,26 @@ const setWebSocket = (wss: any) => {
     ws.on("message", (message: string) => {
       var msg = JSON.parse(message);
       let userClicks: number, countryClicks: number;
-      User.findOne({ name: msg.user, blocked: false }, (err, user: any) => {
-        if (err) return console.error(err);
-        if (!user) ws.terminate();
-        if (ws.connected && msg.add) {
-          clicksData.clicks++;
-          clicksData.todayClicks++;
-          ws.clicks !== undefined && ws.clicks++;
-          clicksData.countries.find((country, index) => {
-            if (country.name === ws.country) {
-              clicksData.countries[index].clicks++;
-              sendData(ws, wss);
-              return true;
-            }
-            return false;
-          });
+      UserModel.findOne(
+        { name: msg.user, blocked: false },
+        (err, user: any) => {
+          if (err) return console.error(err);
+          if (!user) ws.terminate();
+          if (ws.connected && msg.add) {
+            clicksData.clicks++;
+            clicksData.todayClicks++;
+            ws.clicks !== undefined && ws.clicks++;
+            clicksData.countries.find((country, index) => {
+              if (country.name === ws.country) {
+                clicksData.countries[index].clicks++;
+                sendData(ws, wss);
+                return true;
+              }
+              return false;
+            });
+          }
         }
-      });
+      );
     });
 
     ws.on("limited", (data: any) => {
