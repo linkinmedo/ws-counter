@@ -57,9 +57,10 @@ export default {
   flex: 1;
   flex-direction: column;
   align-items: center;
-  border: 1px solid lightgrey;
-  // border-radius: 20px;
-  margin-left: 10px;
+  // border: 1px solid lightgrey;
+  box-shadow: 0px 0px 20px #999;
+  border-radius: 20px;
+  margin: 20px 10px;
   z-index: 10;
 }
 ol {
@@ -68,10 +69,11 @@ ol {
 }
 li {
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  border-bottom: 1px solid lightgrey;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   margin: 0 10px;
+  padding: 0 50px;
   &:last-child {
     border-bottom: none;
   }

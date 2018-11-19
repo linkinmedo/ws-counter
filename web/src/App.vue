@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div class="container" v-if="connection !== 'loading'">
-      <Animation ref="animation"/>
+      <Animation v-if="isAnimated" ref="animation"/>
       <Counter
         :count=count
         :add=add
@@ -12,6 +12,7 @@
         <Today :countToday=countToday />
         <TopCountries :topCountries=topCountries />
       </div>
+      <AnimationToggle :isAnimated=isAnimated v-on:toggle="isAnimated = !isAnimated" />
     </div>
     <Loading v-else />
   </div>
@@ -23,6 +24,7 @@ import Counter from "./components/Counter.vue";
 import Today from "./components/Today.vue";
 import TopCountries from "./components/TopCountries.vue";
 import Loading from "./components/Loading.vue";
+import AnimationToggle from "./components/AnimationToggle.vue";
 import _ from "lodash";
 
 export default {
@@ -35,7 +37,8 @@ export default {
       countUser: 0,
       countToday: 0,
       topCountries: [],
-      user: ""
+      user: "",
+      isAnimated: true
     };
   },
   components: {
@@ -43,7 +46,8 @@ export default {
     Counter,
     Today,
     TopCountries,
-    Loading
+    Loading,
+    AnimationToggle
   },
   beforeMount() {
     if (this.$cookies.isKey("ws-user"))
@@ -89,7 +93,7 @@ export default {
       }
     },
     updateCount(data) {
-      if (this.$refs.animation) this.$refs.animation.potato();
+      if (this.$refs.animation) this.$refs.animation.animate();
       this.count = data.count;
       if (data.countUser != undefined) {
         if (!data.connected) {
@@ -107,8 +111,10 @@ export default {
 <style lang="scss">
 body {
   margin: 0;
-  background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
-  // background: linear-gradient(#2b5876, #4e4376);
+  user-select: none;
+  // background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
+  background: linear-gradient(#0f0c29, #302b63, #24243e);
+  // background: linear-gradient(#141E30, #243B55);
 }
 
 #app {

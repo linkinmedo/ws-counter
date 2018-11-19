@@ -25,9 +25,10 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid lightgrey;
-  // border-radius: 20px;
-  margin-right: 10px;
+  // border: 1px solid lightgrey;
+  box-shadow: 0px 0px 20px #999;
+  border-radius: 20px;
+  margin: 20px 10px;
   z-index: 10;
 }
 .count {

@@ -138,7 +138,7 @@ export default {
     window.addEventListener("resize", setCanvasSize, false);
   },
   methods: {
-    potato() {
+    animate() {
       this.animateParticules(
         anime.random(0, window.innerWidth),
         anime.random(0, window.innerHeight)

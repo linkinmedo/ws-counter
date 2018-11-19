@@ -48,9 +48,6 @@ export default {
 span {
   color: $primary;
 }
-h3 {
-  margin: 40px 0 0;
-}
 h1,
 h2 {
   transition: width 500ms;
