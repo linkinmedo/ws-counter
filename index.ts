@@ -46,23 +46,26 @@ ClickModel.findOne()
   .sort({ time: -1 })
   .exec((err, click: Click) => {
     if (err) return console.error(err);
-    if (!click) return;
-    console.log(click.time.toDateString());
-    clicksData.clicks = click ? click.amount : 0;
-    clicksData.oldClicks = click ? click.amount : 0;
-    clicksData.todayClicks =
-      click && click.time.toDateString() === new Date().toDateString()
-        ? click.clicksToday
-        : 0;
+    if (click) {
+      console.log(click.time.toDateString());
+      clicksData.clicks = click ? click.amount : 0;
+      clicksData.oldClicks = click ? click.amount : 0;
+      clicksData.todayClicks =
+        click && click.time.toDateString() === new Date().toDateString()
+          ? click.clicksToday
+          : 0;
+    }
     CountryModel.find((err: Error, countries: Array<Country>) => {
       if (err) return console.error(err);
-      countries.forEach(country =>
-        clicksData.countries.push({
-          name: country.name,
-          flag: country.flag,
-          clicks: country.clicks
-        })
-      );
+      if (countries.length > 0) {
+        countries.forEach(country =>
+          clicksData.countries.push({
+            name: country.name,
+            flag: country.flag,
+            clicks: country.clicks
+          })
+        );
+      }
       const wss = startServer();
       setWebSocket(wss);
     });
