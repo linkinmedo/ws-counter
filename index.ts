@@ -9,18 +9,18 @@ import WebSocket from "ws";
 import nanoid from "nanoid";
 import { CronJob } from "cron";
 import Config from "./config";
-import {
-  Data,
-  Click,
-  User,
-  Message,
-  TodayClick,
-  Country,
-  Client
-} from "./interfaces";
+import { Data, Click, User, Message, TodayClick, Country } from "./interfaces";
 import { ClickModel, TodayClickModel, CountryModel, UserModel } from "./models";
 import Secrets from "./secrets.json";
 var rateLimit = require("ws-rate-limit");
+
+interface Client extends WebSocket {
+  fouls?: number;
+  country?: string;
+  connected?: boolean;
+  clicks?: number;
+  name?: string;
+}
 
 mongoose.connect(
   `mongodb://${Config.db.host}:${Config.db.port}/${Config.db.db_name}`,
@@ -73,7 +73,7 @@ new CronJob(
   () => {
     clicksData.todayClicks = 0;
   },
-  null,
+  undefined,
   true
 );
 

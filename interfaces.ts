@@ -40,10 +40,3 @@ export interface Data {
   }>;
 }
 
-export interface Client extends WebSocket {
-  fouls?: number;
-  country?: string;
-  connected?: boolean;
-  clicks?: number;
-  name?: string;
-}
