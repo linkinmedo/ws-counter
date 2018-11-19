@@ -150,21 +150,21 @@ const updateDb = () => {
 const sendData = (ws: Client, wss: any) => {
   clicksData.countries.sort((obj1, obj2) => obj2.clicks - obj1.clicks);
   ws.send(
-    `{
-      "count": ${clicksData.clicks},
-      "countUser": ${ws.clicks},
-      "countToday": ${clicksData.todayClicks},
-      "topCountries": ${clicksData.countries.slice(0, 5)}
-    }`
+    JSON.stringify({
+      count: clicksData.clicks,
+      countUser: ws.clicks,
+      countToday: clicksData.todayClicks,
+      topCountries: clicksData.countries.slice(0, 5)
+    })
   );
   wss.clients.forEach((client: Client) => {
     if (client !== ws)
       client.send(
-        `{
-          "count": ${clicksData.clicks},
-          "countToday": ${clicksData.todayClicks},
-          "topCountries": ${clicksData.countries.slice(0, 5)}
-        }`
+        JSON.stringify({
+          count: clicksData.clicks,
+          countToday: clicksData.todayClicks,
+          topCountries: clicksData.countries.slice(0, 5)
+        })
       );
   });
 };
@@ -219,7 +219,7 @@ const setWebSocket = (wss: any) => {
       console.log("creating user");
       createUser(ws);
       ws.clicks = 0;
-      ws.send(`{ "name": ${ws.name} }`);
+      ws.send(JSON.stringify({ name: ws.name }));
     } else {
       console.log("checking user");
       checkUser(name, ws);
@@ -246,13 +246,13 @@ const setWebSocket = (wss: any) => {
         ws.country = response.data.country_name;
         // ws.send(JSON.stringify({ connected: true }));
         ws.send(
-          `{
-            "count": ${clicksData.clicks},
-            "countUser": ${ws.clicks},
-            "countToday": ${clicksData.todayClicks},
-            "topCountries": ${clicksData.countries.slice(0, 5)},
-            "connected": true
-          }`
+          JSON.stringify({
+            count: clicksData.clicks,
+            countUser: ws.clicks,
+            countToday: clicksData.todayClicks,
+            topCountries: clicksData.countries.slice(0, 5),
+            connected: true
+          })
         );
         ws.connected = true;
       })
@@ -261,13 +261,13 @@ const setWebSocket = (wss: any) => {
         ws.country = "Other";
         // ws.send(JSON.stringify({ connected: true }));
         ws.send(
-          `{
-            "count": ${clicksData.clicks},
-            "countUser": ${ws.clicks},
-            "countToday": ${clicksData.todayClicks},
-            "topCountries": ${clicksData.countries.slice(0, 5)},
-            "connected": true
-          }`
+          JSON.stringify({
+            count: clicksData.clicks,
+            countUser: ws.clicks,
+            countToday: clicksData.todayClicks,
+            topCountries: clicksData.countries.slice(0, 5),
+            connected: true
+          })
         );
         ws.connected = true;
       });
