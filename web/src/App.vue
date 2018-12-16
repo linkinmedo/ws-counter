@@ -38,7 +38,7 @@ export default {
       countToday: 0,
       topCountries: [],
       user: "",
-      isAnimated: true
+      isAnimated: false
     };
   },
   components: {
