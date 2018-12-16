@@ -1,7 +1,8 @@
 <template>
   <div class="counter">
     <div v-if="connection === 'lost'" class="lost">
-      <p>Connection to the server lost, click the button to reconnect.</p>
+      <p v-if="!robot">Connection to the server lost, click the button to reconnect.</p>
+      <p v-else>You've been blocked because you use a robot!</p>
     </div>
     <div class="row">
       <h1>This </h1>
@@ -25,7 +26,8 @@ export default {
     countSession: Number,
     countUser: Number,
     add: Function,
-    connection: String
+    connection: String,
+    robot: Boolean
   }
 };
 </script>

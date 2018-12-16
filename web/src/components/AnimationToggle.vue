@@ -1,5 +1,5 @@
 <template>
-  <div class="animation-toggle" :class="{ disabled: !isAnimated }" v-on:click="toggle">
+  <div class="animation-toggle" :class="{ disabled: !isAnimated }" v-on:click="toggle" title="Party?">
     <p>🎉</p>
   </div>
 </template>

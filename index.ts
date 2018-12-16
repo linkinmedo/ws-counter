@@ -15,11 +15,12 @@ import Secrets from "./secrets.json";
 var rateLimit = require("ws-rate-limit");
 
 interface Client extends WebSocket {
-  fouls?: number;
+  fouls: number;
   country?: string;
   connected?: boolean;
   clicks?: number;
   name?: string;
+  terminated?: Boolean;
 }
 
 mongoose.connect(
@@ -47,7 +48,6 @@ ClickModel.findOne()
   .exec((err, click: Click) => {
     if (err) return console.error(err);
     if (click) {
-      console.log(click.time.toDateString());
       clicksData.clicks = click ? click.amount : 0;
       clicksData.oldClicks = click ? click.amount : 0;
       clicksData.todayClicks =
@@ -172,7 +172,9 @@ const sendData = (ws: Client, wss: any) => {
   });
 };
 
-const blockUser = (name: String, ws: WebSocket) => {
+const blockUser = (name: String, ws: Client) => {
+  ws.send(JSON.stringify({ robot: true }));
+  ws.terminated = true;
   ws.terminate();
   UserModel.updateOne({ name }, { blocked: true }, (err, user) => {
     if (err) return console.error(err);
@@ -180,27 +182,84 @@ const blockUser = (name: String, ws: WebSocket) => {
   });
 };
 
-const createUser = (ws: Client) => {
+const createUser = async (ws: Client) => {
   const name = nanoid();
   let newUser = new UserModel({ name });
-  newUser.save((err, newUser) => {
+  await newUser.save((err, newUser) => {
     if (err) return console.error(err);
   });
   console.log("user saved");
   ws.name = name;
 };
 
-const checkUser = (name: any, ws: Client) => {
-  UserModel.findOne({ name: name }, (err, user: User) => {
+const checkUser = async (name: any, ws: Client) => {
+  await UserModel.findOne({ name: name }, (err, user: User) => {
     if (err) return console.error(err);
-    if (user === undefined || user.blocked) ws.terminate();
-    ws.name = name;
-    ws.clicks = user.clicks;
+    if (user === undefined || user.blocked) {
+      ws.send(JSON.stringify({ robot: true }));
+      ws.terminated = true;
+      ws.terminate();
+      return false;
+    } else {
+      ws.name = name;
+      ws.clicks = user.clicks;
+      return true;
+    }
   });
+};
+
+const getLocation = (ws: Client) => {
+  axios
+    .get(
+      `https://api.ipgeolocation.io/ipgeo?apiKey=${Secrets.geo_key}&ip=${
+        process.env.NODE_ENV === "production" ? ip : "5.45.143.9"
+      }&fields=country_name,country_flag`
+    )
+    .then(response => {
+      if (
+        !clicksData.countries.find(
+          country => country.name === response.data.country_name
+        )
+      ) {
+        clicksData.countries.push({
+          name: response.data.country_name,
+          flag: response.data.country_flag,
+          clicks: 0
+        });
+      }
+      ws.country = response.data.country_name;
+      // ws.send(JSON.stringify({ connected: true }));
+      ws.send(
+        JSON.stringify({
+          count: clicksData.clicks,
+          countUser: ws.clicks,
+          countToday: clicksData.todayClicks,
+          topCountries: clicksData.countries.slice(0, 5),
+          connected: true
+        })
+      );
+      ws.connected = true;
+    })
+    .catch(error => {
+      console.error(error);
+      ws.country = "Other";
+      // ws.send(JSON.stringify({ connected: true }));
+      ws.send(
+        JSON.stringify({
+          count: clicksData.clicks,
+          countUser: ws.clicks,
+          countToday: clicksData.todayClicks,
+          topCountries: clicksData.countries.slice(0, 5),
+          connected: true
+        })
+      );
+      ws.connected = true;
+    });
 };
 
 const setWebSocket = (wss: any) => {
   wss.on("connection", (ws: Client, req: any) => {
+    ws.fouls = 0;
     console.log("Url: ", req.url);
     const query = url.parse(req.url, true).query;
     const ip =
@@ -219,63 +278,17 @@ const setWebSocket = (wss: any) => {
     }
 
     if (!name) {
-      console.log("creating user");
-      createUser(ws);
-      ws.clicks = 0;
-      ws.send(JSON.stringify({ name: ws.name }));
+      createUser(ws).then(() => {
+        ws.clicks = 0;
+        ws.send(JSON.stringify({ name: ws.name }));
+        getLocation(ws);
+      });
     } else {
-      console.log("checking user");
-      checkUser(name, ws);
+      checkUser(name, ws).then(() => {
+        if (!ws.terminated) getLocation(ws);
+      });
     }
 
-    axios
-      .get(
-        `https://api.ipgeolocation.io/ipgeo?apiKey=${Secrets.geo_key}&ip=${
-          process.env.NODE_ENV === "production" ? ip : "5.45.143.9"
-        }&fields=country_name,country_flag`
-      )
-      .then(response => {
-        if (
-          !clicksData.countries.find(
-            country => country.name === response.data.country_name
-          )
-        ) {
-          clicksData.countries.push({
-            name: response.data.country_name,
-            flag: response.data.country_flag,
-            clicks: 0
-          });
-        }
-        ws.country = response.data.country_name;
-        // ws.send(JSON.stringify({ connected: true }));
-        ws.send(
-          JSON.stringify({
-            count: clicksData.clicks,
-            countUser: ws.clicks,
-            countToday: clicksData.todayClicks,
-            topCountries: clicksData.countries.slice(0, 5),
-            connected: true
-          })
-        );
-        ws.connected = true;
-      })
-      .catch(error => {
-        console.error(error);
-        ws.country = "Other";
-        // ws.send(JSON.stringify({ connected: true }));
-        ws.send(
-          JSON.stringify({
-            count: clicksData.clicks,
-            countUser: ws.clicks,
-            countToday: clicksData.todayClicks,
-            topCountries: clicksData.countries.slice(0, 5),
-            connected: true
-          })
-        );
-        ws.connected = true;
-      });
-
-    ws.fouls = 0;
     limiter(ws);
 
     ws.on("close", () => {
@@ -310,7 +323,7 @@ const setWebSocket = (wss: any) => {
     });
 
     ws.on("limited", (data: any) => {
-      ws.fouls && ws.fouls++;
+      ws.fouls++;
       let d = JSON.parse(data);
       if (ws.fouls && ws.fouls >= 5) {
         blockUser(d.user, ws);

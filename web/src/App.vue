@@ -7,6 +7,7 @@
         :add=add
         :countSession=countSession
         :countUser=countUser
+        :robot=robot
         :connection=connection />
       <div class="row">
         <Today :countToday=countToday />
@@ -38,7 +39,8 @@ export default {
       countToday: 0,
       topCountries: [],
       user: "",
-      isAnimated: false
+      isAnimated: false,
+      robot: false
     };
   },
   components: {
@@ -57,7 +59,7 @@ export default {
   methods: {
     add: _.throttle(function() {
       if (this.connection != "connected") {
-        this.connect();
+        if (!this.robot) this.connect();
       } else {
         this.socket.send(
           JSON.stringify({
@@ -88,6 +90,8 @@ export default {
       } else if (data.connected) {
         this.connection = "connected";
         this.updateCount(data);
+      } else if (data.robot) {
+        this.robot = true;
       } else {
         this.updateCount(data);
       }
