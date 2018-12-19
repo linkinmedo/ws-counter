@@ -73,7 +73,7 @@ export default {
       this.socket = new WebSocket(
         `${process.env.NODE_ENV === "production" ? "wss" : "ws"}://${
           process.env.VUE_APP_WS_HOST
-        }:8999${this.user !== "" ? "?name=" + this.user : ""}`
+        }/wss/${this.user !== "" ? "?name=" + this.user : ""}`
       );
       this.socket.addEventListener("message", event => {
         var data = JSON.parse(event.data);

@@ -208,7 +208,7 @@ const checkUser = async (name: any, ws: Client) => {
   });
 };
 
-const getLocation = (ws: Client) => {
+const getLocation = (ws: Client, ip: String) => {
   axios
     .get(
       `https://api.ipgeolocation.io/ipgeo?apiKey=${Secrets.geo_key}&ip=${
@@ -281,11 +281,11 @@ const setWebSocket = (wss: any) => {
       createUser(ws).then(() => {
         ws.clicks = 0;
         ws.send(JSON.stringify({ name: ws.name }));
-        getLocation(ws);
+        getLocation(ws, ip);
       });
     } else {
       checkUser(name, ws).then(() => {
-        if (!ws.terminated) getLocation(ws);
+        if (!ws.terminated) getLocation(ws, ip);
       });
     }
 
