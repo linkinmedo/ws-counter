@@ -275,6 +275,7 @@ const setWebSocket = (wss: any) => {
       ip === null
     ) {
       ws.terminate();
+      return;
     }
 
     if (!name) {
