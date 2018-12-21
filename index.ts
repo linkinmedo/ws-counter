@@ -12,7 +12,7 @@ import Config from "./config";
 import { Data, Click, User, Message, TodayClick, Country } from "./interfaces";
 import { ClickModel, TodayClickModel, CountryModel, UserModel } from "./models";
 import Secrets from "./secrets.json";
-var rateLimit = require("ws-rate-limit");
+let rateLimit = require("ws-rate-limit");
 
 interface Client extends WebSocket {
   fouls: number;
@@ -116,13 +116,13 @@ const startServer = () => {
   const wss = new WebSocket.Server({ server });
 
   //start our server
-  server.listen(Config.server.port || 8999, () => {
+  server.listen(Config.server.port || 8999, "0.0.0.0", () => {
     console.log(`Server started on port ${Config.server.port || 8999} :)`);
   });
 
   setInterval(() => {
     if (clicksData.oldClicks !== clicksData.clicks) updateDb();
-  }, 2000);
+  }, 5000);
 
   return wss;
 };
@@ -188,7 +188,6 @@ const createUser = async (ws: Client) => {
   await newUser.save((err, newUser) => {
     if (err) return console.error(err);
   });
-  console.log("user saved");
   ws.name = name;
 };
 
@@ -260,19 +259,19 @@ const getLocation = (ws: Client, ip: String) => {
 const setWebSocket = (wss: any) => {
   wss.on("connection", (ws: Client, req: any) => {
     ws.fouls = 0;
-    console.log("Url: ", req.url);
     const query = url.parse(req.url, true).query;
-    const ip =
-      (req.headers["x-forwarded-for"] || "").split(",").pop() ||
-      req.connection.remoteAddress ||
-      req.socket.remoteAddress ||
-      req.connection.socket.remoteAddress;
-    console.log("User ip: ", ip);
+    const ip = req.connection.remoteAddress;
+    // const ip =
+    //   (req.headers["x-forwarded-for"] || "").split(",").pop() ||
+    //   req.connection.remoteAddress ||
+    //   req.socket.remoteAddress ||
+    //   req.connection.socket.remoteAddress;
     const { name } = url.parse(req.url, true).query;
 
     if (
-      !Config.server.allawed_origins.includes(req.headers.origin) ||
-      ip === null
+      !ip ||
+      ip === null ||
+      !Config.server.allawed_origins.includes(req.headers.origin)
     ) {
       ws.terminate();
       return;
@@ -299,8 +298,7 @@ const setWebSocket = (wss: any) => {
     });
     //connection is up, let's add a simple simple event
     ws.on("message", (message: string) => {
-      var msg = JSON.parse(message);
-      let userClicks: number, countryClicks: number;
+      let msg = JSON.parse(message);
       UserModel.findOne(
         { name: msg.user, blocked: false },
         (err, user: any) => {

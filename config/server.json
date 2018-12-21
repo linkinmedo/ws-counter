@@ -1,4 +1,4 @@
 {
   "port": 8999,
-  "allawed_origins": ["https://button.mohsh.com", "https://www.button.mohsh.com", "http://localhost:8080"]
+  "allawed_origins": ["https://button.mohsh.com", "https://www.button.mohsh.com", "https://test.mohsh.com", "http://localhost:8080"]
 }
