@@ -161,7 +161,7 @@ const sendData = (ws: Client, wss: any) => {
     })
   );
   wss.clients.forEach((client: Client) => {
-    if (client !== ws)
+    if (client !== ws && !client.terminated)
       client.send(
         JSON.stringify({
           count: clicksData.clicks,
