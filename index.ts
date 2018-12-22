@@ -162,13 +162,17 @@ const sendData = (ws: Client, wss: any) => {
   );
   wss.clients.forEach((client: Client) => {
     if (client !== ws && !client.terminated)
-      client.send(
-        JSON.stringify({
-          count: clicksData.clicks,
-          countToday: clicksData.todayClicks,
-          topCountries: clicksData.countries.slice(0, 5)
-        })
-      );
+      try {
+        client.send(
+          JSON.stringify({
+            count: clicksData.clicks,
+            countToday: clicksData.todayClicks,
+            topCountries: clicksData.countries.slice(0, 5)
+          })
+        );
+      } catch (err) {
+        console.log(err);
+      }
   });
 };
 
