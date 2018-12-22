@@ -23,7 +23,7 @@ export default {
 @import "../assets/_variables.scss";
 
 .animation-toggle {
-  position: absolute;
+  position: fixed;
   display: flex;
   justify-content: center;
   align-items: center;
