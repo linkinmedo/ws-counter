@@ -171,7 +171,7 @@ const sendData = (ws: Client, wss: any) => {
           })
         );
       } catch (err) {
-        console.log(err);
+        // ignore
       }
   });
 };
