@@ -46,6 +46,11 @@ export default {
   box-shadow: 0px 0px 20px #999;
   border-radius: 20px;
   z-index: 100;
+  overflow-y: scroll;
+  @media screen and (max-width: 800px) {
+    width: 90vw;
+    margin-left: -45vw;
+  }
 }
 ol {
   width: 100%;
