@@ -1,8 +1,9 @@
 <template>
-  <div class="top-countries">
-    <h2>Top 5 Countries:</h2>
+  <div class="all-countries">
+    <h2>All Countries:</h2>
+    <div class="close" @click="toggleAllCountries">x</div>
     <ol>
-      <li v-for="country in topCountries" :key="country.name">
+      <li v-for="country in allCountries" :key="country.name">
         <div class="country">
           <img :src="country.flag" :alt="country.name" />
           <p>{{ country.name }}</p>
@@ -10,15 +11,14 @@
         <p class="count">{{ country.clicks }}</p>
       </li>
     </ol>
-    <p class="see-all-countries" @click="toggleAllCountries">see all countries</p>
   </div>
 </template>
 
 <script>
 export default {
-  name: "TopCountries",
+  name: "AllCountries",
   props: {
-    topCountries: Array,
+    allCountries: Array,
     toggleAllCountries: Function
   }
 };
@@ -28,16 +28,24 @@ export default {
 <style scoped lang="scss">
 @import "../assets/_variables.scss";
 
-.top-countries {
+.all-countries {
+  height: 90vh;
+  width: 50vw;
+  position: absolute;
+  top: 5vh;
+  background: black;
+  left: 50%;
+  margin-left: -25vw;
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
+  // background: linear-gradient(#0f0c29, #302b63, #24243e);
+  background: #0f0c29;
   // border: 1px solid lightgrey;
   box-shadow: 0px 0px 20px #999;
   border-radius: 20px;
-  margin: 20px 10px;
-  z-index: 10;
+  z-index: 100;
 }
 ol {
   width: 100%;
@@ -65,7 +73,14 @@ img {
 .count {
   color: $primary;
 }
-.see-all-countries {
+.close {
+  height: 25px;
+  width: 25px;
+  position: absolute;
+  right: 25px;
+  top: 25px;
+  border: 1px solid white;
+  border-radius: 50%;
   cursor: pointer;
 }
 </style>

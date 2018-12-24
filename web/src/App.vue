@@ -11,9 +11,10 @@
         :connection=connection />
       <div class="row">
         <Today :countToday=countToday />
-        <TopCountries :topCountries=topCountries />
+        <TopCountries :topCountries=topCountries :toggleAllCountries=toggleAllCountries />
       </div>
       <AnimationToggle :isAnimated=isAnimated v-on:toggle="isAnimated = !isAnimated" />
+      <AllCountries v-if="showAllCountries" :allCountries=allCountries :toggleAllCountries=toggleAllCountries />
     </div>
     <Loading v-else />
   </div>
@@ -24,6 +25,7 @@ import Animation from "./components/Animation.vue";
 import Counter from "./components/Counter.vue";
 import Today from "./components/Today.vue";
 import TopCountries from "./components/TopCountries.vue";
+import AllCountries from "./components/AllCountries.vue";
 import Loading from "./components/Loading.vue";
 import AnimationToggle from "./components/AnimationToggle.vue";
 import _ from "lodash";
@@ -38,6 +40,8 @@ export default {
       countUser: 0,
       countToday: 0,
       topCountries: [],
+      allCountries: [],
+      showAllCountries: false,
       user: "",
       isAnimated: false,
       robot: false
@@ -48,6 +52,7 @@ export default {
     Counter,
     Today,
     TopCountries,
+    AllCountries,
     Loading,
     AnimationToggle
   },
@@ -92,6 +97,8 @@ export default {
         this.updateCount(data);
       } else if (data.robot) {
         this.robot = true;
+      } else if (data.updateAllCountries) {
+        this.allCountries = data.allCountries;
       } else {
         this.updateCount(data);
       }
@@ -107,6 +114,11 @@ export default {
       }
       this.countToday = data.countToday;
       this.topCountries = data.topCountries;
+      if (this.showAllCountries) this.allCountries = data.allCountries;
+    },
+    toggleAllCountries() {
+      this.showAllCountries = !this.showAllCountries;
+      this.socket.send(JSON.stringify({ allCountries: this.showAllCountries }));
     }
   }
 };

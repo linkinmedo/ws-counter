@@ -21,6 +21,7 @@ interface Client extends WebSocket {
   clicks?: number;
   name?: string;
   terminated?: Boolean;
+  allCountries: Boolean;
 }
 
 mongoose.connect(
@@ -157,7 +158,8 @@ const sendData = (ws: Client, wss: any) => {
       count: clicksData.clicks,
       countUser: ws.clicks,
       countToday: clicksData.todayClicks,
-      topCountries: clicksData.countries.slice(0, 5)
+      topCountries: clicksData.countries.slice(0, 5),
+      allCountries: ws.allCountries && clicksData.countries
     })
   );
   wss.clients.forEach((client: Client) => {
@@ -167,7 +169,8 @@ const sendData = (ws: Client, wss: any) => {
           JSON.stringify({
             count: clicksData.clicks,
             countToday: clicksData.todayClicks,
-            topCountries: clicksData.countries.slice(0, 5)
+            topCountries: clicksData.countries.slice(0, 5),
+            allCountries: client.allCountries && clicksData.countries
           })
         );
       } catch (err) {
@@ -263,6 +266,7 @@ const getLocation = (ws: Client, ip: String) => {
 const setWebSocket = (wss: any) => {
   wss.on("connection", (ws: Client, req: any) => {
     ws.fouls = 0;
+    ws.allCountries = false;
     const query = url.parse(req.url, true).query;
     const ip = req.connection.remoteAddress;
     // const ip =
@@ -303,12 +307,22 @@ const setWebSocket = (wss: any) => {
     //connection is up, let's add a simple simple event
     ws.on("message", (message: string) => {
       let msg = JSON.parse(message);
-      UserModel.findOne(
-        { name: msg.user, blocked: false },
-        (err, user: any) => {
-          if (err) return console.error(err);
-          if (!user) ws.terminate();
-          if (ws.connected && msg.add) {
+      if ("allCountries" in msg) {
+        ws.allCountries = msg.allCountries;
+        if (msg.allCountries)
+          ws.send(
+            JSON.stringify({
+              updateAllCountries: true,
+              allCountries: clicksData.countries
+            })
+          );
+      }
+      if (ws.connected && msg.add) {
+        UserModel.findOne(
+          { name: msg.user, blocked: false },
+          (err, user: any) => {
+            if (err) return console.error(err);
+            if (!user) ws.terminate();
             clicksData.clicks++;
             clicksData.todayClicks++;
             ws.clicks !== undefined && ws.clicks++;
@@ -321,8 +335,8 @@ const setWebSocket = (wss: any) => {
               return false;
             });
           }
-        }
-      );
+        );
+      }
     });
 
     ws.on("limited", (data: any) => {
