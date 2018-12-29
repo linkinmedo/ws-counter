@@ -1,22 +1,33 @@
 <template>
   <div id="app">
     <div class="container" v-if="connection !== 'loading'">
-      <Counter  :count=count :add=add :countSession=countSession :countUser=countUser :connection=connection />
+      <Animation v-if="isAnimated" ref="animation"/>
+      <Counter
+        :count=count
+        :add=add
+        :countSession=countSession
+        :countUser=countUser
+        :robot=robot
+        :connection=connection />
       <div class="row">
         <Today :countToday=countToday />
-        <TopCountries :topCountries=topCountries />
+        <TopCountries :topCountries=topCountries :toggleAllCountries=toggleAllCountries />
       </div>
+      <AnimationToggle :isAnimated=isAnimated v-on:toggle="isAnimated = !isAnimated" />
+      <AllCountries v-if="showAllCountries" :allCountries=allCountries :toggleAllCountries=toggleAllCountries />
     </div>
-    <h2 v-else>loading...</h2>
+    <Loading v-else />
   </div>
 </template>
 
 <script>
+import Animation from "./components/Animation.vue";
 import Counter from "./components/Counter.vue";
 import Today from "./components/Today.vue";
 import TopCountries from "./components/TopCountries.vue";
-import request from "request";
-import nanoid from "nanoid";
+import AllCountries from "./components/AllCountries.vue";
+import Loading from "./components/Loading.vue";
+import AnimationToggle from "./components/AnimationToggle.vue";
 import _ from "lodash";
 
 export default {
@@ -25,90 +36,112 @@ export default {
     return {
       connection: "loading",
       count: 0,
-      countSession: -1,
+      countSession: 0,
       countUser: 0,
       countToday: 0,
       topCountries: [],
-      country: "",
-      flag: "",
-      user: ""
+      allCountries: [],
+      showAllCountries: false,
+      user: "",
+      isAnimated: false,
+      robot: false
     };
   },
   components: {
+    Animation,
     Counter,
     Today,
-    TopCountries
+    TopCountries,
+    AllCountries,
+    Loading,
+    AnimationToggle
   },
   beforeMount() {
-    request(
-      `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.VUE_APP_IP_KEY}`,
-      (error, response, body) => {
-        this.country = JSON.parse(body).country_name;
-        this.flag = JSON.parse(body).country_flag;
-        if (!this.$cookies.isKey("ws-counter"))
-          this.$cookies.set("ws-counter", nanoid(), Infinity);
-        this.user = this.$cookies.get("ws-counter");
-        this.connect(false);
-      }
-    );
+    if (this.$cookies.isKey("ws-user"))
+      this.user = this.$cookies.get("ws-user");
+    this.connect();
   },
   methods: {
     add: _.throttle(function() {
       if (this.connection != "connected") {
-        this.connect(true);
+        if (!this.robot) this.connect();
       } else {
         this.socket.send(
           JSON.stringify({
             user: this.user,
-            country: this.country,
-            flag: this.flag,
             add: true
           })
         );
       }
     }, 100),
-    connect(add) {
+    connect() {
       this.socket = new WebSocket(
         `${process.env.NODE_ENV === "production" ? "wss" : "ws"}://${
           process.env.VUE_APP_WS_HOST
-        }:8999`
+        }:8999${this.user !== "" ? "?name=" + this.user : ""}`
       );
-      this.socket.addEventListener("open", () => {
-        this.socket.send(
-          JSON.stringify({
-            user: this.user,
-            country: this.country,
-            add: add
-          })
-        );
-      });
       this.socket.addEventListener("message", event => {
-        this.connection = "connected";
         var data = JSON.parse(event.data);
-        this.count = data.count;
-        if (data.countUser != undefined) {
-          this.countSession++;
-          this.countUser = data.countUser;
-        }
-        this.countToday = data.countToday;
-        this.topCountries = data.topCountries;
+        this.actions(data);
       });
       this.socket.addEventListener("close", () => {
         this.connection = "lost";
       });
+    },
+    actions(data) {
+      if (data.name) {
+        this.user = data.name;
+        this.$cookies.set("ws-user", data.name, Infinity);
+      } else if (data.connected) {
+        this.connection = "connected";
+        this.updateCount(data);
+      } else if (data.robot) {
+        this.robot = true;
+      } else if (data.updateAllCountries) {
+        this.allCountries = data.allCountries;
+      } else {
+        this.updateCount(data);
+      }
+    },
+    updateCount(data) {
+      if (this.$refs.animation) this.$refs.animation.animate();
+      this.count = data.count;
+      if (data.countUser != undefined) {
+        if (!data.connected) {
+          this.countSession++;
+        }
+        this.countUser = data.countUser;
+      }
+      this.countToday = data.countToday;
+      this.topCountries = data.topCountries;
+      if (this.showAllCountries) this.allCountries = data.allCountries;
+    },
+    toggleAllCountries() {
+      this.showAllCountries = !this.showAllCountries;
+      this.socket.send(JSON.stringify({ allCountries: this.showAllCountries }));
     }
   }
 };
 </script>
 
 <style lang="scss">
+body {
+  margin: 0;
+  user-select: none;
+  // background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e);
+  background: linear-gradient(#0f0c29, #302b63, #24243e);
+  // background: linear-gradient(#141E30, #243B55);
+}
+
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  // font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: "K2D", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  color: white;
+  width: 100vw;
+  min-height: 100vh;
   .container {
     width: 100%;
     display: flex;

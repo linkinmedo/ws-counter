@@ -1,157 +1,350 @@
-import fs from 'fs';
-import express from 'express';
-import mongoose from 'mongoose';
-import https from 'https';
-import http from 'http';
-import WebSocket from 'ws';
-import Config from './config';
-var rateLimit = require('ws-rate-limit');
+import fs from "fs";
+import url from "url";
+import express from "express";
+import mongoose from "mongoose";
+import https from "https";
+import http from "http";
+import axios from "axios";
+import WebSocket from "ws";
+import nanoid from "nanoid";
+import { CronJob } from "cron";
+import Config from "./config";
+import { Data, Click, User, Message, TodayClick, Country } from "./interfaces";
+import { ClickModel, TodayClickModel, CountryModel, UserModel } from "./models";
+import Secrets from "./secrets.json";
+let rateLimit = require("ws-rate-limit");
 
-mongoose.connect(`mongodb://${ Config.db.host }:${ Config.db.port }/${ Config.db.db_name }`, { useNewUrlParser: true });
-let db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-
-// Typescript Interface
-interface Message {
-    user: string;
-    country: string;
-    add: boolean;
+interface Client extends WebSocket {
+  fouls: number;
+  country?: string;
+  connected?: boolean;
+  clicks?: number;
+  name?: string;
+  terminated?: Boolean;
+  allCountries: Boolean;
 }
 
-// Mongoose Schema
-let clickSchema = new mongoose.Schema({
-  user: String,
-  country: String,
-  date: { type: Date, default: Date.now },
-});
-
-let countrySchema = new mongoose.Schema({
-  name: String,
-  flag: String,
-  clicks: Number
-});
-
-let blockedSchema = new mongoose.Schema({
-  user: String,
-});
-
-// Mongoose Model
-let Click = mongoose.model('Click', clickSchema);
-let Country = mongoose.model('Country', countrySchema);
-let Blocked = mongoose.model('Blocked', blockedSchema);
+mongoose.connect(
+  `mongodb://${Config.db.host}:${Config.db.port}/${Config.db.db_name}`,
+  { useNewUrlParser: true }
+);
+let db = mongoose.connection;
+db.on("error", console.error.bind(console, "connection error:"));
 
 // Rate limiter
-let limiter = rateLimit('1s', 9);
+let limiter = rateLimit("1s", 9);
 
-const app = express();
-let server :any;
+// Clicks variables
+let clicksData: Data = {
+  clicks: 0,
+  oldClicks: 0,
+  todayClicks: 0,
+  countries: []
+};
+let wss: any;
 
-// SSL Cert
-if ( process.env.NODE_ENV === "production" ) {
-  const privateKey = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/privkey.pem', 'utf8');
-  const certificate = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/cert.pem', 'utf8');
-  const ca = fs.readFileSync('/etc/letsencrypt/live/mohsh.com/fullchain.pem', 'utf8');
+// Get inital click count
+ClickModel.findOne()
+  .sort({ time: -1 })
+  .exec((err, click: Click) => {
+    if (err) return console.error(err);
+    if (click) {
+      clicksData.clicks = click ? click.amount : 0;
+      clicksData.oldClicks = click ? click.amount : 0;
+      clicksData.todayClicks =
+        click && click.time.toDateString() === new Date().toDateString()
+          ? click.clicksToday
+          : 0;
+    }
+    CountryModel.find((err: Error, countries: Array<Country>) => {
+      if (err) return console.error(err);
+      if (countries.length > 0) {
+        countries.forEach(country =>
+          clicksData.countries.push({
+            name: country.name,
+            flag: country.flag,
+            clicks: country.clicks
+          })
+        );
+      }
+      const wss = startServer();
+      setWebSocket(wss);
+    });
+  });
 
-  const credentials = {
+new CronJob(
+  "0 0 0 * * *",
+  () => {
+    clicksData.todayClicks = 0;
+  },
+  undefined,
+  true
+);
+
+const startServer = () => {
+  let server: any;
+  const app = express();
+
+  // SSL Cert
+  if (process.env.NODE_ENV === "production") {
+    const privateKey = fs.readFileSync(
+      "/etc/letsencrypt/live/mohsh.com/privkey.pem",
+      "utf8"
+    );
+    const certificate = fs.readFileSync(
+      "/etc/letsencrypt/live/mohsh.com/cert.pem",
+      "utf8"
+    );
+    const ca = fs.readFileSync(
+      "/etc/letsencrypt/live/mohsh.com/fullchain.pem",
+      "utf8"
+    );
+
+    const credentials = {
       key: privateKey,
       cert: certificate,
       ca: ca
-  };
+    };
 
-  //initialize a simple https server
-  server = https.createServer(credentials, app);
-} else {
-  //initialize a simple http server
-  server = http.createServer(app);
-}
+    //initialize a simple https server
+    server = https.createServer(credentials, app);
+  } else {
+    //initialize a simple http server
+    server = http.createServer(app);
+  }
 
-//initialize the WebSocket server instance
-const wss = new WebSocket.Server({ server });
+  //initialize the WebSocket server instance
+  const wss = new WebSocket.Server({ server });
 
-const sendData = (msg: Message, ws :WebSocket) => {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  Promise.all<any> ([Click.count({}),
-                    Click.count({user: msg.user}),
-                    Click.count({ date: {$gt: today} }),
-                    Country.find({}).sort({clicks: -1}).limit(5)]).then( function(values: Array<Number | Array <Object>>) {
-    ws.send(JSON.stringify({ count: values[0], countUser: values[1], countToday: values[2], topCountries: values[3] }));
-    wss.clients
-        .forEach(client => {
-          if (client !== ws)
-            client.send(JSON.stringify({ count: values[0], countToday: values[2], topCountries: values[3] }));
-        });
-                    }).catch( function(error: Error) {
-                      ws.terminate();
-                    } )
-}
+  //start our server
+  server.listen(Config.server.port || 8999, "0.0.0.0", () => {
+    console.log(`Server started on port ${Config.server.port || 8999} :)`);
+  });
 
-const blockUser = (user: String, ws: WebSocket) => {
-        ws.terminate();
-        let newBlocked = new Blocked({ user: user })
-        newBlocked.save((err, newBlocked) => {
+  setInterval(() => {
+    if (clicksData.oldClicks !== clicksData.clicks) updateDb();
+  }, 5000);
+
+  return wss;
+};
+
+// update db clicks
+const updateDb = () => {
+  let newClick = new ClickModel({
+    amount: clicksData.clicks,
+    new: clicksData.clicks - clicksData.oldClicks,
+    clicksToday: clicksData.todayClicks
+  });
+  newClick.save((err, newClick) => {
+    if (err) return console.error(err);
+    clicksData.oldClicks = clicksData.clicks;
+    clicksData.countries.forEach(country => {
+      CountryModel.updateOne(
+        { name: country.name },
+        { clicks: country.clicks, name: country.name, flag: country.flag },
+        { upsert: true },
+        err => {
           if (err) return console.error(err);
-        })
-}
+        }
+      );
+    });
+  });
+};
 
-wss.on('connection', (ws: any, req: any) => {
-    if(process.env.NODE_ENV === "production") {
-      if(!Config.server.allawed_origins.includes(req.headers.origin)) {
-        ws.terminate();
+const sendData = (ws: Client, wss: any) => {
+  clicksData.countries.sort((obj1, obj2) => obj2.clicks - obj1.clicks);
+  ws.send(
+    JSON.stringify({
+      count: clicksData.clicks,
+      countUser: ws.clicks,
+      countToday: clicksData.todayClicks,
+      topCountries: clicksData.countries.slice(0, 5),
+      allCountries: ws.allCountries && clicksData.countries
+    })
+  );
+  wss.clients.forEach((client: Client) => {
+    if (client !== ws && !client.terminated)
+      try {
+        client.send(
+          JSON.stringify({
+            count: clicksData.clicks,
+            countToday: clicksData.todayClicks,
+            topCountries: clicksData.countries.slice(0, 5),
+            allCountries: client.allCountries && clicksData.countries
+          })
+        );
+      } catch (err) {
+        // ignore
       }
+  });
+};
+
+const blockUser = (name: String, ws: Client) => {
+  ws.send(JSON.stringify({ robot: true }));
+  ws.terminated = true;
+  ws.terminate();
+  UserModel.updateOne({ name }, { blocked: true }, (err, user) => {
+    if (err) return console.error(err);
+    console.log(`user ${user.name} has been blocked!`);
+  });
+};
+
+const createUser = async (ws: Client) => {
+  const name = nanoid();
+  let newUser = new UserModel({ name });
+  await newUser.save((err, newUser) => {
+    if (err) return console.error(err);
+  });
+  ws.name = name;
+};
+
+const checkUser = async (name: any, ws: Client) => {
+  await UserModel.findOne({ name: name }, (err, user: User) => {
+    if (err) return console.error(err);
+    if (user === undefined || user.blocked) {
+      ws.send(JSON.stringify({ robot: true }));
+      ws.terminated = true;
+      ws.terminate();
+      return false;
+    } else {
+      ws.name = name;
+      ws.clicks = user.clicks;
+      return true;
+    }
+  });
+};
+
+const getLocation = (ws: Client, ip: String) => {
+  axios
+    .get(
+      `https://api.ipgeolocation.io/ipgeo?apiKey=${Secrets.geo_key}&ip=${
+        process.env.NODE_ENV === "production" ? ip : "5.45.143.9"
+      }&fields=country_name,country_flag`
+    )
+    .then(response => {
+      if (
+        !clicksData.countries.find(
+          country => country.name === response.data.country_name
+        )
+      ) {
+        clicksData.countries.push({
+          name: response.data.country_name,
+          flag: response.data.country_flag,
+          clicks: 0
+        });
+      }
+      ws.country = response.data.country_name;
+      // ws.send(JSON.stringify({ connected: true }));
+      ws.send(
+        JSON.stringify({
+          count: clicksData.clicks,
+          countUser: ws.clicks,
+          countToday: clicksData.todayClicks,
+          topCountries: clicksData.countries.slice(0, 5),
+          connected: true
+        })
+      );
+      ws.connected = true;
+    })
+    .catch(error => {
+      console.error(error);
+      ws.country = "Other";
+      // ws.send(JSON.stringify({ connected: true }));
+      ws.send(
+        JSON.stringify({
+          count: clicksData.clicks,
+          countUser: ws.clicks,
+          countToday: clicksData.todayClicks,
+          topCountries: clicksData.countries.slice(0, 5),
+          connected: true
+        })
+      );
+      ws.connected = true;
+    });
+};
+
+const setWebSocket = (wss: any) => {
+  wss.on("connection", (ws: Client, req: any) => {
+    ws.fouls = 0;
+    ws.allCountries = false;
+    const query = url.parse(req.url, true).query;
+    const ip = req.connection.remoteAddress;
+    // const ip =
+    //   (req.headers["x-forwarded-for"] || "").split(",").pop() ||
+    //   req.connection.remoteAddress ||
+    //   req.socket.remoteAddress ||
+    //   req.connection.socket.remoteAddress;
+    const { name } = url.parse(req.url, true).query;
+
+    if (
+      !ip ||
+      ip === null ||
+      !Config.server.allawed_origins.includes(req.headers.origin)
+    ) {
+      ws.terminate();
+      return;
     }
 
-    ws.fouls = 0;
+    if (!name) {
+      createUser(ws).then(() => {
+        ws.clicks = 0;
+        ws.send(JSON.stringify({ name: ws.name }));
+        getLocation(ws, ip);
+      });
+    } else {
+      checkUser(name, ws).then(() => {
+        if (!ws.terminated) getLocation(ws, ip);
+      });
+    }
+
     limiter(ws);
 
-    // var clicks: Number, userClicks: Number, todayClicks: Number;
-
-    //connection is up, let's add a simple simple event
-    ws.on('message', (message: string) => {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        //log the received message and send it back to the client
-        // console.log('received: %s', message);
-        var msg = JSON.parse(message);
-        Blocked.findOne({ user: msg.user }, (err, blocked) => {
-          if (err) return console.error(err);
-          if (blocked !== null) ws.terminate();
-          if (msg.add) {
-            let newClick = new Click({ country: msg.country, user: msg.user });
-            newClick.save((err, newClick) => {
-              if (err) return console.error(err);
-              Country.find({ name: msg.country }, (err, country) => {
-                if (err) return console.error(err);
-                if (country.length === 0) {
-                  let newCountry = new Country({ name: msg.country, clicks: 1, flag: msg.flag });
-                  newCountry.save((err, newCountry) => {
-                    if (err) return console.error(err);
-                    sendData(msg, ws);
-                  })
-                } else {
-                  Country.updateOne({ name: msg.country }, { $inc: {clicks:1} }, (err, country) => {
-                    if (err) return console.error(err);
-                    sendData(msg, ws);
-                  });
-                }
-              })
-            } );
-          } else {
-            sendData(msg, ws);
-          }
-        })
+    ws.on("close", () => {
+      UserModel.updateOne({ name: ws.name }, { clicks: ws.clicks }, err => {
+        if (err) return console.error(err);
+      });
     });
-    ws.on('limited', (data: any) => {
+    //connection is up, let's add a simple simple event
+    ws.on("message", (message: string) => {
+      let msg = JSON.parse(message);
+      if ("allCountries" in msg) {
+        ws.allCountries = msg.allCountries;
+        if (msg.allCountries)
+          ws.send(
+            JSON.stringify({
+              updateAllCountries: true,
+              allCountries: clicksData.countries
+            })
+          );
+      }
+      if (ws.connected && msg.add) {
+        UserModel.findOne(
+          { name: msg.user, blocked: false },
+          (err, user: any) => {
+            if (err) return console.error(err);
+            if (!user) ws.terminate();
+            clicksData.clicks++;
+            clicksData.todayClicks++;
+            ws.clicks !== undefined && ws.clicks++;
+            clicksData.countries.find((country, index) => {
+              if (country.name === ws.country) {
+                clicksData.countries[index].clicks++;
+                sendData(ws, wss);
+                return true;
+              }
+              return false;
+            });
+          }
+        );
+      }
+    });
+
+    ws.on("limited", (data: any) => {
       ws.fouls++;
       let d = JSON.parse(data);
-      if (ws.fouls >= 5) {
+      if (ws.fouls && ws.fouls >= 5) {
         blockUser(d.user, ws);
       }
-    })
-});
-
-//start our server
-server.listen(Config.server.port || 8999, () => {
-    console.log(`Server started on port ${ Config.server.port || 8999 } :)`);
-});
+    });
+  });
+};

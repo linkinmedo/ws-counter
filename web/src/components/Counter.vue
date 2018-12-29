@@ -1,7 +1,8 @@
 <template>
   <div class="counter">
     <div v-if="connection === 'lost'" class="lost">
-      <p>Connection to the server lost, click the button to reconnect.</p>
+      <p v-if="!robot">Connection to the server lost, click the button to reconnect.</p>
+      <p v-else>You've been blocked because you use a robot!</p>
     </div>
     <div class="row">
       <h1>This </h1>
@@ -25,54 +26,59 @@ export default {
     countSession: Number,
     countUser: Number,
     add: Function,
-    connection: String
+    connection: String,
+    robot: Boolean
   }
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+@import "../assets/_variables.scss";
+
 .counter {
+  margin-top: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  z-index: 10;
 }
 .row {
   display: flex;
   align-items: center;
 }
 span {
-  color: #42b983;
-}
-h3 {
-  margin: 40px 0 0;
+  color: $primary;
 }
 h1,
 h2 {
   transition: width 500ms;
 }
 button {
+  position: relative;
   border-radius: 10px;
   padding: 0 20px;
   height: 50px;
   text-transform: uppercase;
   margin: 0 10px;
-  background-color: #42b983;
+  background-color: $primary;
   outline: none;
   cursor: pointer;
   color: white;
   font-weight: bold;
   font-size: 16px;
+  font-family: "K2D";
   border: none;
-  box-shadow: 2px 2px 20px #999;
+  box-shadow: 0px 0px 20px #999;
   transition: box-shadow 100ms;
   &:hover {
-    box-shadow: 5px 5px 20px #999;
+    box-shadow: 0px 0px 30px #999;
   }
   &:active {
-    box-shadow: 2px 2px 20px #999;
+    box-shadow: 0px 0px 20px #999;
   }
 }
+
 .lost {
   position: absolute;
   top: 10px;
