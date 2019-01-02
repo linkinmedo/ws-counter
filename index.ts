@@ -22,6 +22,7 @@ interface Client extends WebSocket {
   name?: string;
   terminated?: Boolean;
   allCountries: Boolean;
+  oldDate: Date;
 }
 
 mongoose.connect(
@@ -306,6 +307,12 @@ const setWebSocket = (wss: any) => {
     });
     //connection is up, let's add a simple simple event
     ws.on("message", (message: string) => {
+      if (ws.oldDate) {
+        let hello: any = new Date().getTime() - ws.oldDate.getTime();
+        console.log(hello);
+      }
+      ws.oldDate = new Date();
+
       let msg = JSON.parse(message);
       if ("allCountries" in msg) {
         ws.allCountries = msg.allCountries;
