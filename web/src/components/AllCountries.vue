@@ -31,7 +31,7 @@ export default {
 .all-countries {
   height: 90vh;
   width: 50vw;
-  position: absolute;
+  position: fixed;
   top: 5vh;
   background: black;
   left: 50%;

@@ -117,6 +117,7 @@ export default {
       if (this.showAllCountries) this.allCountries = data.allCountries;
     },
     toggleAllCountries() {
+      document.body.style.overflow = this.showAllCountries ? "auto" : "hidden";
       this.showAllCountries = !this.showAllCountries;
       this.socket.send(JSON.stringify({ allCountries: this.showAllCountries }));
     }
@@ -149,6 +150,9 @@ body {
     justify-content: center;
     .row {
       display: flex;
+      @media (max-width: 800px) {
+        flex-direction: column;
+      }
     }
   }
 }
