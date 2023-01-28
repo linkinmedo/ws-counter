@@ -6,14 +6,14 @@
 import anime from "animejs";
 
 export default {
-  name: "Animation",
+  name: "AnimationComponent",
   props: {
     count: Number,
     countSession: Number,
     countUser: Number,
     add: Function,
     connection: String,
-    isAnimated: Boolean
+    isAnimated: Boolean,
   },
   mounted() {
     var canvasEl = this.$refs["canvas"];
@@ -35,7 +35,7 @@ export default {
       var radius = [-1, 1][anime.random(0, 1)] * value;
       return {
         x: p.x + radius * Math.cos(angle),
-        y: p.y + radius * Math.sin(angle)
+        y: p.y + radius * Math.sin(angle),
       };
     }
 
@@ -46,7 +46,7 @@ export default {
       p.color = colors[anime.random(0, colors.length - 1)];
       p.radius = anime.random(16, 32);
       p.endPos = setParticuleDirection(p);
-      p.draw = function() {
+      p.draw = function () {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI, true);
         ctx.fillStyle = p.color;
@@ -63,7 +63,7 @@ export default {
       p.radius = 0.1;
       p.alpha = 0.5;
       p.lineWidth = 6;
-      p.draw = function() {
+      p.draw = function () {
         ctx.globalAlpha = p.alpha;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI, true);
@@ -91,16 +91,16 @@ export default {
         .timeline()
         .add({
           targets: particules,
-          x: function(p) {
+          x: function (p) {
             return p.endPos.x;
           },
-          y: function(p) {
+          y: function (p) {
             return p.endPos.y;
           },
           radius: 0.1,
           duration: anime.random(1200, 1800),
           easing: "easeOutExpo",
-          update: renderParticule
+          update: renderParticule,
         })
         .add({
           targets: circle,
@@ -109,20 +109,20 @@ export default {
           alpha: {
             value: 0,
             easing: "linear",
-            duration: anime.random(600, 800)
+            duration: anime.random(600, 800),
           },
           duration: anime.random(1200, 1800),
           easing: "easeOutExpo",
           update: renderParticule,
-          offset: 0
+          offset: 0,
         });
     };
 
     anime({
       duration: Infinity,
-      update: function() {
+      update: function () {
         ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-      }
+      },
     });
 
     function autoClick() {
@@ -143,8 +143,8 @@ export default {
         anime.random(0, window.innerWidth),
         anime.random(0, window.innerHeight)
       );
-    }
-  }
+    },
+  },
 };
 </script>
 

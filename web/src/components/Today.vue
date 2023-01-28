@@ -8,10 +8,10 @@
 
 <script>
 export default {
-  name: "Today",
+  name: "TodayComponent",
   props: {
-    countToday: Number
-  }
+    countToday: Number,
+  },
 };
 </script>
 

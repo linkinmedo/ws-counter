@@ -1,32 +1,43 @@
 <template>
   <div id="app">
     <div class="container" v-if="connection !== 'loading'">
-      <Animation v-if="isAnimated" ref="animation"/>
-      <Counter
-        :count=count
-        :add=add
-        :countSession=countSession
-        :countUser=countUser
-        :robot=robot
-        :connection=connection />
+      <AnimationComponent v-if="isAnimated" ref="animation" />
+      <CounterComponent
+        :count="count"
+        :add="add"
+        :countSession="countSession"
+        :countUser="countUser"
+        :robot="robot"
+        :connection="connection"
+      />
       <div class="row">
-        <Today :countToday=countToday />
-        <TopCountries :topCountries=topCountries :toggleAllCountries=toggleAllCountries />
+        <TodayComponent :countToday="countToday" />
+        <TopCountries
+          :topCountries="topCountries"
+          :toggleAllCountries="toggleAllCountries"
+        />
       </div>
-      <AnimationToggle :isAnimated=isAnimated v-on:toggle="isAnimated = !isAnimated" />
-      <AllCountries v-if="showAllCountries" :allCountries=allCountries :toggleAllCountries=toggleAllCountries />
+      <AnimationToggle
+        :isAnimated="isAnimated"
+        v-on:toggle="isAnimated = !isAnimated"
+      />
+      <AllCountries
+        v-if="showAllCountries"
+        :allCountries="allCountries"
+        :toggleAllCountries="toggleAllCountries"
+      />
     </div>
-    <Loading v-else />
+    <LoadingComponent v-else />
   </div>
 </template>
 
 <script>
-import Animation from "./components/Animation.vue";
-import Counter from "./components/Counter.vue";
-import Today from "./components/Today.vue";
+import AnimationComponent from "./components/Animation.vue";
+import CounterComponent from "./components/Counter.vue";
+import TodayComponent from "./components/Today.vue";
 import TopCountries from "./components/TopCountries.vue";
 import AllCountries from "./components/AllCountries.vue";
-import Loading from "./components/Loading.vue";
+import LoadingComponent from "./components/Loading.vue";
 import AnimationToggle from "./components/AnimationToggle.vue";
 import _ from "lodash";
 
@@ -44,17 +55,17 @@ export default {
       showAllCountries: false,
       user: "",
       isAnimated: false,
-      robot: false
+      robot: false,
     };
   },
   components: {
-    Animation,
-    Counter,
-    Today,
+    AnimationComponent,
+    CounterComponent,
+    TodayComponent,
     TopCountries,
     AllCountries,
-    Loading,
-    AnimationToggle
+    LoadingComponent,
+    AnimationToggle,
   },
   beforeMount() {
     if (this.$cookies.isKey("ws-user"))
@@ -62,29 +73,31 @@ export default {
     this.connect();
   },
   methods: {
-    add: _.throttle(function() {
+    add: _.throttle(function () {
       if (this.connection != "connected") {
         if (!this.robot) this.connect();
       } else {
         this.socket.send(
           JSON.stringify({
             user: this.user,
-            add: true
+            add: true,
           })
         );
       }
     }, 100),
     connect() {
       this.socket = new WebSocket(
-        `${process.env.NODE_ENV === "production" ? "wss" : "ws"}://${
+        `${process.env.NODE_ENV === "production" ? "ws" : "ws"}://${
           process.env.VUE_APP_WS_HOST
-        }:8999${this.user !== "" ? "?name=" + this.user : ""}`
+        }:9000${this.user !== "" ? "?name=" + this.user : ""}`
       );
-      this.socket.addEventListener("message", event => {
+      this.socket.addEventListener("message", (event) => {
+        console.log("message!!!");
         var data = JSON.parse(event.data);
         this.actions(data);
       });
       this.socket.addEventListener("close", () => {
+        console.log("closed!!!");
         this.connection = "lost";
       });
     },
@@ -120,8 +133,8 @@ export default {
       document.body.style.overflow = this.showAllCountries ? "auto" : "hidden";
       this.showAllCountries = !this.showAllCountries;
       this.socket.send(JSON.stringify({ allCountries: this.showAllCountries }));
-    }
-  }
+    },
+  },
 };
 </script>
 
