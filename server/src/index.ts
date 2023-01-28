@@ -1,5 +1,5 @@
 // import fs from "fs";
-// import "dotenv/config";
+import "dotenv/config";
 import url from "url";
 import mongoose from "mongoose";
 import axios from "axios";
@@ -197,8 +197,7 @@ const checkUser = async (name: any, ws: Client) => {
 const getLocation = (ws: Client, ip: string) => {
   axios
     .get(
-      `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.GEO_KEY}&ip=${
-        process.env.NODE_ENV === "production" ? ip : "5.45.143.9"
+      `https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.GEO_KEY}&ip=${process.env.NODE_ENV === "production" ? ip : "5.45.143.9"
       }&fields=country_name,country_flag`
     )
     .then((response) => {

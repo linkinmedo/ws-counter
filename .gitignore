@@ -80,3 +80,7 @@ typings/
 
 # Ignore Secrets
 secrets.json
+
+# db dump
+data/
+dump/
