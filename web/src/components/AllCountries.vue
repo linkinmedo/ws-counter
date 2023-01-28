@@ -19,8 +19,8 @@ export default {
   name: "AllCountries",
   props: {
     allCountries: Array,
-    toggleAllCountries: Function
-  }
+    toggleAllCountries: Function,
+  },
 };
 </script>
 

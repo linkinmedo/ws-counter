@@ -1,5 +1,10 @@
 <template>
-  <div class="animation-toggle" :class="{ disabled: !isAnimated }" v-on:click="toggle" title="Party?">
+  <div
+    class="animation-toggle"
+    :class="{ disabled: !isAnimated }"
+    v-on:click="toggle"
+    title="Party?"
+  >
     <p>🎉</p>
   </div>
 </template>
@@ -8,13 +13,13 @@
 export default {
   name: "AnimationToggle",
   props: {
-    isAnimated: Boolean
+    isAnimated: Boolean,
   },
   methods: {
     toggle() {
       this.$emit("toggle");
-    }
-  }
+    },
+  },
 };
 </script>
 

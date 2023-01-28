@@ -1,0 +1,41 @@
+version: "3"
+services:
+  web:
+    container_name: counter-web
+    image: counter-web
+    restart: always
+    build: ./web
+    ports:
+      - "80:80"
+      - 443:443
+    volumes:
+      - ./.cert:/etc/letsencrypt
+    links:
+      - api
+    networks:
+      - backend
+    depends_on:
+      - api
+  api:
+    container_name: counter-server
+    image: counter-server 
+    restart: always
+    build: ./server
+    ports:
+      - "9000:9000"
+    networks:
+      - backend
+    links:
+      - mongo
+    depends_on:
+      - mongo
+  mongo:
+    container_name: mongo
+    image: mongo
+    volumes:
+      - ./data:/data/db
+    ports:
+      - '27018:27017'
+
+networks:
+  backend:

@@ -1,34 +1,43 @@
 <template>
   <div class="counter">
     <div v-if="connection === 'lost'" class="lost">
-      <p v-if="!robot">Connection to the server lost, click the button to reconnect.</p>
+      <p v-if="!robot">
+        Connection to the server lost, click the button to reconnect.
+      </p>
       <p v-else>You've been blocked because you use a robot!</p>
     </div>
     <div class="row">
-      <h1>This </h1>
+      <h1>This</h1>
       <button v-on:click="add">button</button>
-      <h1> has been clicked <span>{{ count }}</span> times.</h1>
+      <h1>
+        has been clicked <span>{{ count }}</span> times.
+      </h1>
     </div>
     <div class="row">
-      <h2>You have clicked the button <span>{{ countSession }}</span> times this session.</h2>
+      <h2>
+        You have clicked the button <span>{{ countSession }}</span> times this
+        session.
+      </h2>
     </div>
     <div class="row">
-      <h2>You have clicked the button <span>{{ countUser }}</span> times overall.</h2>
+      <h2>
+        You have clicked the button <span>{{ countUser }}</span> times overall.
+      </h2>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: "Counter",
+  name: "CounterComponent",
   props: {
     count: Number,
     countSession: Number,
     countUser: Number,
     add: Function,
     connection: String,
-    robot: Boolean
-  }
+    robot: Boolean,
+  },
 };
 </script>
 

@@ -10,7 +10,9 @@
         <p class="count">{{ country.clicks }}</p>
       </li>
     </ol>
-    <p class="see-all-countries" @click="toggleAllCountries">see all countries</p>
+    <p class="see-all-countries" @click="toggleAllCountries">
+      see all countries
+    </p>
   </div>
 </template>
 
@@ -19,8 +21,8 @@ export default {
   name: "TopCountries",
   props: {
     topCountries: Array,
-    toggleAllCountries: Function
-  }
+    toggleAllCountries: Function,
+  },
 };
 </script>
 
