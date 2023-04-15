@@ -87,17 +87,15 @@ export default {
     }, 100),
     connect() {
       this.socket = new WebSocket(
-        `${process.env.NODE_ENV === "production" ? "ws" : "ws"}://${
+        `${process.env.NODE_ENV === "production" ? "wss" : "ws"}://${
           process.env.VUE_APP_WS_HOST
-        }:9000${this.user !== "" ? "?name=" + this.user : ""}`
+        }/websocket${this.user !== "" ? "?name=" + this.user : ""}`
       );
       this.socket.addEventListener("message", (event) => {
-        console.log("message!!!");
         var data = JSON.parse(event.data);
         this.actions(data);
       });
       this.socket.addEventListener("close", () => {
-        console.log("closed!!!");
         this.connection = "lost";
       });
     },
