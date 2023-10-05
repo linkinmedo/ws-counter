@@ -89,7 +89,7 @@ export default {
       this.socket = new WebSocket(
         `${process.env.NODE_ENV === "production" ? "wss" : "ws"}://${
           process.env.VUE_APP_WS_HOST
-        }/websocket${this.user !== "" ? "?name=" + this.user : ""}`
+        }:8999${this.user !== "" ? "?name=" + this.user : ""}`
       );
       this.socket.addEventListener("message", (event) => {
         var data = JSON.parse(event.data);
@@ -100,6 +100,7 @@ export default {
       });
     },
     actions(data) {
+      console.log('data', data);
       if (data.name) {
         this.user = data.name;
         this.$cookies.set("ws-user", data.name, Infinity);

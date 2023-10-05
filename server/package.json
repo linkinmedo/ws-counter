@@ -2,7 +2,7 @@
   "name": "ws-counter",
   "version": "1.0.0",
   "description": "Websocket Counter Button",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -29,24 +29,19 @@
   },
   "homepage": "https://github.com/linkinmedo/ws-counter#readme",
   "dependencies": {
-    "axios": "^1.2.3",
     "cron": "^2.1.0",
-    "dotenv": "^16.0.1",
-    "express": "^4.16.3",
     "mongoose": "^6.1.1",
-    "nanoid": "^4.0.0",
-    "typescript": "^4.5.2",
-    "ws": "^8.3.0",
-    "ws-rate-limit": "0.0.0"
+    "nanoid": "^5.0.1",
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
     "@types/cron": "^2.0.0",
-    "@types/express": "^4.16.0",
     "@types/mongodb": "^4.0.7",
     "@types/mongoose": "^5.11.97",
-    "@types/ws": "^8.2.2",
-    "nodemon": "^2.0.20",
-    "prettier": "^2.5.1",
-    "ts-node": "^10.9.1"
+    "bun-types": "^1.0.2",
+    "prettier": "^3.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   }
 }
